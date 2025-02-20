@@ -299,9 +299,7 @@
         }
         // Enhanced color palette for root's direct children
         const rootChildColors = [
-            // '#FF1E1E', // Red
-            '#00FF00', // Green
-            '#4169E1', // Royal Blue
+            '#FF1E1E', // Red
             '#FF00FF', // Magenta
             '#FFFF00', // Yellow
             '#00FFFF', // Cyan
@@ -312,12 +310,13 @@
         ];
 
         let nextColorIndex = 0;
+        // #00FF00
 
         // Define vibrant colors for different node types
         const nodeColors = {
             root: '#FF1E1E',
             category: {
-                'default': '#00FF00'
+                'default': '#ff531e'
             },
             task: '#4169E1'
         };
@@ -360,6 +359,8 @@
         let node = svg.append("g").selectAll("g");
 
         function getNodeColor(d) {
+            console.log(d);
+            console.log("this is getNodecolor's d");
             if (d.type === "root") return nodeColors.root;
             if (d.type === "category") {
                 if (d.color) return d.color;
@@ -563,6 +564,8 @@
         function addCategory() {
             const categoryName = document.getElementById("categoryInput").value;
             const parentId = document.getElementById("parentSelect").value || "root";
+            console.log(parentId);
+
 
             if (categoryName.trim() === "") return;
 
@@ -572,6 +575,10 @@
             let categoryColor;
             if (parentId === "root") {
                 categoryColor = rootChildColors[nextColorIndex % rootChildColors.length];
+                // nodeColors.category[`${categoryName}`] = categoryColor;
+                // console.log(categoryColor);
+                // console.log(parentId);
+
                 nextColorIndex++;
             }
 
@@ -613,7 +620,7 @@
         function addTask() {
             const category = document.getElementById("categorySelect").value;
             const taskName = document.getElementById("taskInput").value;
-
+            console.log(category);
             if (taskName.trim() === "" || !category) return;
 
             const taskId = `task-${Date.now()}`;
