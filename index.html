@@ -1,0 +1,731 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Task Graph Manager</title>
+    <style>
+        /* Previous styles remain the same */
+        body {
+            margin: 0;
+            padding: 0;
+            display: flex;
+            background: #000000;
+            color: #ffffff;
+            flex-direction: column;
+        }
+
+        .header {
+            background: #111111;
+            padding: 1rem;
+            display: grid;
+            grid-template-columns: 40px 1fr 40px;
+            /* Create 3 columns: hamburger, title, empty space */
+            align-items: center;
+            border-bottom: 1px solid #333;
+            z-index: 1000;
+        }
+
+        .hamburger {
+            grid-column: 1;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-around;
+            cursor: pointer;
+            padding: 5px;
+        }
+
+        .header h1 {
+            grid-column: 2;
+            margin: 0;
+            font-size: 1.5rem;
+            text-align: center;
+        }
+
+        /* Root node image styling */
+        .node.root-node image {
+            transform: translate(-25px, -25px);
+            /* Center the image based on its size */
+        }
+
+        .hamburger span {
+            width: 100%;
+            height: 3px;
+            background: #ffffff;
+            border-radius: 3px;
+            transition: all 0.3s ease;
+        }
+
+        /* .header h1 {
+            margin: 0;
+            font-size: 1.5rem;
+        } */
+
+        .main-content {
+            display: flex;
+            flex: 1;
+            position: relative;
+            height: calc(100vh - 64px);
+            /* Adjust based on header height */
+        }
+
+        .sidebar {
+            width: 200px;
+            background: #111111;
+            height: 100%;
+            padding: 20px;
+            border-right: 1px solid #333;
+            position: absolute;
+            left: -240px;
+            /* Width + padding */
+            transition: left 0.3s ease;
+            z-index: 999;
+        }
+
+        .sidebar.open {
+            left: 0;
+        }
+
+        .sidebar button {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            background: #222;
+            border: 1px solid #444;
+            color: #fff;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .sidebar button:hover {
+            background: #333;
+            border-color: #666;
+        }
+
+        .graph-container {
+            flex: 1;
+            position: relative;
+        }
+
+
+        /* .sidebar {
+            width: 200px;
+            background: #111111;
+            height: 100vh;
+            padding: 20px;
+            border-right: 1px solid #333;
+        }
+
+        .sidebar button {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            background: #222;
+            border: 1px solid #444;
+            color: #fff;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+        } */
+
+        /* .sidebar button:hover {
+            background: #333;
+            border-color: #666;
+        }
+
+        .graph-container {
+            flex: 1;
+            position: relative;
+        } */
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: #111;
+            padding: 20px;
+            border-radius: 6px;
+            border: 1px solid #333;
+            box-shadow: 0 0 30px rgba(255, 255, 255, 0.1);
+            z-index: 1000;
+            color: #fff;
+        }
+
+        .modal-backdrop {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 999;
+        }
+
+        .node {
+            cursor: pointer;
+        }
+
+        .node circle {
+            stroke: rgba(255, 255, 255, 0.3);
+            stroke-width: 2px;
+            filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.3));
+        }
+
+        .node text {
+            font-size: 12px;
+            fill: #fff;
+            text-shadow: 0 0 3px rgba(0, 0, 0, 0.8);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI";
+        }
+
+        .link {
+            stroke-opacity: 0.6;
+            stroke-width: 1px;
+        }
+
+        .node.dimmed circle {
+            opacity: 0.3;
+        }
+
+        .node.dimmed text {
+            opacity: 0.3;
+        }
+
+        .link.dimmed {
+            opacity: 0.1;
+        }
+
+        .node.highlighted circle {
+            filter: drop-shadow(0 0 15px rgba(255, 255, 255, 0.8));
+        }
+
+        .modal input,
+        .modal select {
+            width: 100%;
+            padding: 8px;
+            margin: 10px 0;
+            background: #222;
+            border: 1px solid #444;
+            border-radius: 6px;
+            color: #fff;
+        }
+
+        .modal button {
+            padding: 8px 16px;
+            margin: 5px;
+            border: 1px solid #444;
+            border-radius: 6px;
+            cursor: pointer;
+            background: #333;
+            color: #fff;
+        }
+
+        .modal button.submit:hover {
+            background: #444;
+        }
+
+        h1 {
+            text-align: center;
+        }
+    </style>
+</head>
+
+<body>
+    <header class="header">
+        <div class="hamburger" onclick="toggleSidebar()">
+            <span></span>
+            <span></span>
+            <span></span>
+        </div>
+        <h1>Capabilities</h1>
+    </header>
+
+    <div class="main-content">
+        <div class="sidebar">
+            <button onclick="showAddTaskModal()">Add Task</button>
+            <button onclick="showVisualizationOptions()">Visualization Options</button>
+            <button onclick="showExportOptions()">Export Graph</button>
+            <button onclick="showSettings()">Settings</button>
+            <button onclick="showHelp()">Help</button>
+        </div>
+
+        <div class="graph-container">
+            <svg id="graph"></svg>
+        </div>
+    </div>
+    <div id="taskModal" class="modal">
+        <h3>Add New Task</h3>
+        <select id="categorySelect">
+            <option value="">Select Category</option>
+        </select>
+        <input type="text" id="taskInput" placeholder="Enter task name">
+        <button class="submit" onclick="addTask()">Add</button>
+        <button class="cancel" onclick="hideModals()">Cancel</button>
+    </div>
+
+    <div id="categoryModal" class="modal">
+        <h3>Add New Category</h3>
+        <input type="text" id="categoryInput" placeholder="Enter category name">
+        <select id="parentSelect">
+            <option value="">Select Parent Category (Optional)</option>
+        </select>
+        <button class="submit" onclick="addCategory()">Add</button>
+        <button class="cancel" onclick="hideModals()">Cancel</button>
+    </div>
+
+    <div class="modal-backdrop" onclick="hideModals()"></div>
+
+
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
+    <script>
+        function toggleSidebar() {
+            const sidebar = document.querySelector('.sidebar');
+            sidebar.classList.toggle('open');
+
+            // Update graph width when sidebar is toggled
+            const width = window.innerWidth;
+            d3.select("#graph")
+                .attr("width", width);
+
+            // Update force simulation center
+            simulation.force("center", d3.forceCenter(width / 2, height / 2));
+            simulation.alpha(0.3).restart();
+        }
+        // Enhanced color palette for root's direct children
+        const rootChildColors = [
+            // '#FF1E1E', // Red
+            '#00FF00', // Green
+            '#4169E1', // Royal Blue
+            '#FF00FF', // Magenta
+            '#FFFF00', // Yellow
+            '#00FFFF', // Cyan
+            '#FFA500', // Orange
+            '#9400D3', // Purple
+            '#32CD32', // Lime Green
+            '#FF69B4'  // Hot Pink
+        ];
+
+        let nextColorIndex = 0;
+
+        // Define vibrant colors for different node types
+        const nodeColors = {
+            root: '#FF1E1E',
+            category: {
+                'default': '#00FF00'
+            },
+            task: '#4169E1'
+        };
+
+        // Initial data structure
+        let data = {
+            nodes: [
+                { id: "root", name: "Tasks", type: "root", group: "root" }
+            ],
+            links: []
+        };
+
+        const width = window.innerWidth - 200;
+        const height = window.innerHeight;
+
+        const svg = d3.select("#graph")
+            .attr("width", width)
+            .attr("height", height);
+
+        // Enhanced force simulation
+        const simulation = d3.forceSimulation()
+            .force("link", d3.forceLink().id(d => d.id)
+                .distance(d => {
+                    if (d.source.type === "category" && d.target.type === "category") return 200;
+                    return 80;
+                })
+                .strength(0.5))
+            .force("charge", d3.forceManyBody()
+                .strength(d => {
+                    if (d.type === "root") return -1000;
+                    if (d.type === "category") return -500;
+                    return -100;
+                }))
+            .force("center", d3.forceCenter(width / 2, height / 2))
+            .force("collision", d3.forceCollide().radius(30))
+            .force("x", d3.forceX(width / 2).strength(0.05))
+            .force("y", d3.forceY(height / 2).strength(0.05));
+
+        let link = svg.append("g").selectAll("line");
+        let node = svg.append("g").selectAll("g");
+
+        function getNodeColor(d) {
+            if (d.type === "root") return nodeColors.root;
+            if (d.type === "category") {
+                if (d.color) return d.color;
+                return nodeColors.category[d.group] || nodeColors.category.default;
+            }
+            return nodeColors.task;
+        }
+
+        function getAllDescendants(nodeId) {
+            const descendants = new Set();
+            const stack = [nodeId];
+
+            while (stack.length > 0) {
+                const current = stack.pop();
+                descendants.add(current);
+
+                data.links.forEach(link => {
+                    if (link.target.id === current || link.target === current) {
+                        const sourceId = typeof link.source === 'object' ? link.source.id : link.source;
+                        if (!descendants.has(sourceId)) {
+                            stack.push(sourceId);
+                        }
+                    }
+                });
+            }
+
+            return descendants;
+        }
+
+        function highlightNode(selectedNode, isRootClick = false) {
+            // Reset all nodes and links to normal state
+            node.classed("dimmed", false).classed("highlighted", false);
+            link.classed("dimmed", false);
+
+            if (selectedNode) {
+                // Dim all nodes and links
+                node.classed("dimmed", true);
+                link.classed("dimmed", true);
+
+                let nodesToHighlight;
+                if (isRootClick || selectedNode.type === "root") {
+                    // For root node, highlight all nodes
+                    nodesToHighlight = new Set(data.nodes.map(n => n.id));
+                } else {
+                    // For other nodes, highlight direct connections
+                    nodesToHighlight = new Set();
+                    data.links.forEach(l => {
+                        if (l.source.id === selectedNode.id || l.target.id === selectedNode.id) {
+                            nodesToHighlight.add(l.source.id);
+                            nodesToHighlight.add(l.target.id);
+                        }
+                    });
+                }
+
+                node.filter(d => nodesToHighlight.has(d.id))
+                    .classed("dimmed", false);
+                node.filter(d => d.id === selectedNode.id)
+                    .classed("highlighted", true);
+
+                link.filter(l =>
+                    nodesToHighlight.has(l.source.id) || nodesToHighlight.has(l.target.id)
+                ).classed("dimmed", false);
+            }
+        }
+
+        function handleNodeClick(event, d) {
+            // Prevent double click event from firing
+            event.preventDefault();
+
+            if (event.detail === 1) { // Single click
+                highlightNode(d, d.type === "root");
+            } else if (event.detail === 2) { // Double click
+                if (d.type === "root" || d.type === "category") {
+                    showCategoryModal(d);
+                }
+            }
+        }
+
+        // function updateGraph() {
+        //     // Update links with dynamic colors
+        //     link = link.data(data.links, d => `${d.source.id}-${d.target.id}`);
+        //     link.exit().remove();
+        //     const linkEnter = link.enter().append("line")
+        //         .attr("class", "link")
+        //         .style("stroke", d => {
+        //             const sourceColor = typeof d.source === "object" ?
+        //                 getNodeColor(d.source) :
+        //                 getNodeColor(data.nodes.find(n => n.id === d.source));
+        //             return sourceColor;
+        //         });
+        //     link = linkEnter.merge(link);
+
+        //     // Update nodes with enhanced styling
+        //     node = node.data(data.nodes, d => d.id);
+        //     node.exit().remove();
+
+        //     const nodeEnter = node.enter().append("g")
+        //         .attr("class", "node")
+        //         .call(d3.drag()
+        //             .on("start", dragstarted)
+        //             .on("drag", dragged)
+        //             .on("end", dragended))
+        //         .on("click", handleNodeClick);
+
+        //     nodeEnter.append("circle")
+        //         .attr("r", d => {
+        //             if (d.type === "root") return 25;
+        //             if (d.type === "category") return 20;
+        //             return 10;
+        //         })
+        //         .style("fill", getNodeColor);
+
+        //     nodeEnter.append("text")
+        //         .attr("dy", ".35em")
+        //         .attr("x", d => d.type === "root" ? 30 : 20)
+        //         .text(d => d.name);
+
+        //     node = nodeEnter.merge(node);
+
+        //     // Update simulation
+        //     simulation.nodes(data.nodes)
+        //         .on("tick", ticked);
+
+        //     simulation.force("link")
+        //         .links(data.links);
+
+        //     simulation.alpha(1).restart();
+
+        //     updateSelects();
+        // }
+
+        function updateGraph() {
+            // Update links with dynamic colors
+            link = link.data(data.links, d => `${d.source.id}-${d.target.id}`);
+            link.exit().remove();
+            const linkEnter = link.enter().append("line")
+                .attr("class", "link")
+                .style("stroke", d => {
+                    const sourceColor = typeof d.source === "object" ?
+                        getNodeColor(d.source) :
+                        getNodeColor(data.nodes.find(n => n.id === d.source));
+                    return sourceColor;
+                });
+            link = linkEnter.merge(link);
+
+            // Update nodes with enhanced styling
+            node = node.data(data.nodes, d => d.id);
+            node.exit().remove();
+
+            const nodeEnter = node.enter().append("g")
+                .attr("class", d => `node ${d.type === "root" ? "root-node" : ""}`)
+                .call(d3.drag()
+                    .on("start", dragstarted)
+                    .on("drag", dragged)
+                    .on("end", dragended))
+                .on("click", handleNodeClick);
+
+            // Add different elements based on node type
+            nodeEnter.each(function (d) {
+                const node = d3.select(this);
+
+                if (d.type === "root") {
+                    // Add company logo for root node
+                    node.append("image")
+                        .attr("href", "https://www.ab-inbev.com/images/Header/abinbev-logo.svg") // Replace with your company logo URL
+                        .attr("width", 105)
+                        .attr("height", 105)
+                        .attr("preserveAspectRatio", "xMidYMid meet");
+                } else {
+                    // Add circles for other nodes
+                    node.append("circle")
+                        .attr("r", d => d.type === "category" ? 20 : 10)
+                        .style("fill", getNodeColor);
+                }
+
+                // Add text labels
+                node.append("text")
+                    .attr("dy", ".35em")
+                    .attr("x", d => {
+                        if (d.type === "root") return 35; // Adjust text position for root node
+                        return d.type === "category" ? 25 : 15;
+                    })
+                    .text(d => d.name === "Tasks" ? "" : d.name);
+            });
+
+            node = nodeEnter.merge(node);
+
+            // Update simulation
+            simulation.nodes(data.nodes)
+                .on("tick", ticked);
+
+            simulation.force("link")
+                .links(data.links);
+
+            simulation.alpha(1).restart();
+
+            updateSelects();
+        }
+
+
+        function addCategory() {
+            const categoryName = document.getElementById("categoryInput").value;
+            const parentId = document.getElementById("parentSelect").value || "root";
+
+            if (categoryName.trim() === "") return;
+
+            const categoryId = `category-${Date.now()}`;
+
+            // Assign a unique color if it's a direct child of root
+            let categoryColor;
+            if (parentId === "root") {
+                categoryColor = rootChildColors[nextColorIndex % rootChildColors.length];
+                nextColorIndex++;
+            }
+
+            data.nodes.push({
+                id: categoryId,
+                name: categoryName,
+                type: "category",
+                group: parentId === "root" ? "default" : data.nodes.find(n => n.id === parentId).group,
+                color: categoryColor // Add the color property
+            });
+            data.links.push({ source: categoryId, target: parentId });
+
+            hideModals();
+            updateGraph();
+        }
+
+        // Keep existing utility functions
+        function showAddTaskModal() {
+            document.getElementById("taskModal").style.display = "block";
+            document.querySelector(".modal-backdrop").style.display = "block";
+        }
+
+        function showCategoryModal(parentNode) {
+            document.getElementById("categoryModal").style.display = "block";
+            document.querySelector(".modal-backdrop").style.display = "block";
+            if (parentNode) {
+                document.getElementById("parentSelect").value = parentNode.id;
+            }
+        }
+
+        function hideModals() {
+            document.getElementById("taskModal").style.display = "none";
+            document.getElementById("categoryModal").style.display = "none";
+            document.querySelector(".modal-backdrop").style.display = "none";
+            document.getElementById("taskInput").value = "";
+            document.getElementById("categoryInput").value = "";
+        }
+
+        function addTask() {
+            const category = document.getElementById("categorySelect").value;
+            const taskName = document.getElementById("taskInput").value;
+
+            if (taskName.trim() === "" || !category) return;
+
+            const taskId = `task-${Date.now()}`;
+            data.nodes.push({
+                id: taskId,
+                name: taskName,
+                type: "task",
+                group: data.nodes.find(n => n.id === category).group
+            });
+            data.links.push({ source: taskId, target: category });
+
+            hideModals();
+            updateGraph();
+        }
+
+        // function ticked() {
+        //     link
+        //         .attr("x1", d => d.source.x)
+        //         .attr("y1", d => d.source.y)
+        //         .attr("x2", d => d.target.x)
+        //         .attr("y2", d => d.target.y);
+
+        //     node
+        //         .attr("transform", d => `translate(${d.x},${d.y})`);
+        // }
+        // Update the ticked function to handle the image position
+        function ticked() {
+            link
+                .attr("x1", d => d.source.x)
+                .attr("y1", d => d.source.y)
+                .attr("x2", d => d.target.x)
+                .attr("y2", d => d.target.y);
+
+            node
+                .attr("transform", d => `translate(${d.x},${d.y})`);
+        }
+
+        function dragstarted(event) {
+            if (!event.active) simulation.alphaTarget(0.3).restart();
+            event.subject.fx = event.subject.x;
+            event.subject.fy = event.subject.y;
+        }
+
+        function dragged(event) {
+            event.subject.fx = event.x;
+            event.subject.fy = event.y;
+        }
+
+        function dragended(event) {
+            if (!event.active) simulation.alphaTarget(0);
+            event.subject.fx = null;
+            event.subject.fy = null;
+        }
+
+        function updateSelects() {
+            // Update category select for tasks
+            const categorySelect = document.getElementById("categorySelect");
+            categorySelect.innerHTML = '<option value="">Select Category</option>';
+
+            data.nodes
+                .filter(node => node.type === "category")
+                .forEach(category => {
+                    const option = document.createElement("option");
+                    option.value = category.id;
+                    option.textContent = category.name;
+                    categorySelect.appendChild(option);
+                });
+
+            // Update parent select for categories
+            const parentSelect = document.getElementById("parentSelect");
+            parentSelect.innerHTML = '<option value="">Select Parent Category (Optional)</option>';
+
+            data.nodes
+                .filter(node => node.type === "root" || node.type === "category")
+                .forEach(node => {
+                    const option = document.createElement("option");
+                    option.value = node.id;
+                    option.textContent = node.name;
+                    parentSelect.appendChild(option);
+                });
+        }
+
+        // Dummy functions for future features
+        function showVisualizationOptions() {
+            alert("Visualization Options - Feature coming soon!");
+        }
+
+        function showExportOptions() {
+            alert("Export Graph - Feature coming soon!");
+        }
+
+        function showSettings() {
+            alert("Settings - Feature coming soon!");
+        }
+
+        function showHelp() {
+            alert("Help - Feature coming soon!");
+        }
+        window.addEventListener('resize', () => {
+            const width = window.innerWidth;
+            const height = window.innerHeight - 64;
+
+            svg.attr("width", width)
+                .attr("height", height);
+
+            simulation.force("center", d3.forceCenter(width / 2, height / 2));
+            simulation.alpha(0.3).restart();
+        });
+
+        // Initial render
+        updateGraph();
+    </script>
+</body>
+
+</html>
