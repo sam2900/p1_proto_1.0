@@ -1,5 +1,5 @@
 const d3 = require('d3');
-import * as d3 from 'd3';
+// import * as d3 from 'd3';
 
 const canvas = document.getElementById('starCanvas');
 const ctx = canvas.getContext('2d');
