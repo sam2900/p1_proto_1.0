@@ -2,9 +2,8 @@
 <html>
 
 <head>
-    <title>Task Graph Manager</title>
+    <title>ABI</title>
     <style>
-        /* Previous styles remain the same */
         body {
             margin: 0;
             padding: 0;
@@ -19,7 +18,6 @@
             padding: 1rem;
             display: grid;
             grid-template-columns: 40px 1fr 40px;
-            /* Create 3 columns: hamburger, title, empty space */
             align-items: center;
             border-bottom: 1px solid #333;
             z-index: 1000;
@@ -43,12 +41,6 @@
             text-align: center;
         }
 
-        /* Root node image styling */
-        .node.root-node image {
-            transform: translate(-25px, -25px);
-            /* Center the image based on its size */
-        }
-
         .hamburger span {
             width: 100%;
             height: 3px;
@@ -57,17 +49,11 @@
             transition: all 0.3s ease;
         }
 
-        /* .header h1 {
-            margin: 0;
-            font-size: 1.5rem;
-        } */
-
         .main-content {
             display: flex;
             flex: 1;
             position: relative;
             height: calc(100vh - 64px);
-            /* Adjust based on header height */
         }
 
         .sidebar {
@@ -78,7 +64,6 @@
             border-right: 1px solid #333;
             position: absolute;
             left: -240px;
-            /* Width + padding */
             transition: left 0.3s ease;
             z-index: 999;
         }
@@ -108,37 +93,6 @@
             flex: 1;
             position: relative;
         }
-
-
-        /* .sidebar {
-            width: 200px;
-            background: #111111;
-            height: 100vh;
-            padding: 20px;
-            border-right: 1px solid #333;
-        }
-
-        .sidebar button {
-            width: 100%;
-            padding: 10px;
-            margin: 10px 0;
-            background: #222;
-            border: 1px solid #444;
-            color: #fff;
-            border-radius: 6px;
-            cursor: pointer;
-            transition: all 0.2s;
-        } */
-
-        /* .sidebar button:hover {
-            background: #333;
-            border-color: #666;
-        }
-
-        .graph-container {
-            flex: 1;
-            position: relative;
-        } */
 
         .modal {
             display: none;
@@ -229,8 +183,60 @@
             background: #444;
         }
 
-        h1 {
-            text-align: center;
+        .modal-content {
+            margin-bottom: 15px;
+        }
+
+        .delete-warning {
+            color: #ff4444;
+            margin: 10px 0;
+        }
+
+        .node-list {
+            max-height: 200px;
+            overflow-y: auto;
+            margin: 10px 0;
+            border: 1px solid #444;
+            border-radius: 4px;
+            padding: 5px;
+        }
+
+        .node-list-item {
+            padding: 8px;
+            margin: 2px 0;
+            background: #222;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .node-list-item:hover {
+            background: #333;
+        }
+
+        .node-list-item.selected {
+            background: #444;
+            border: 1px solid #666;
+        }
+
+        /* Style for dotted connections */
+        .link.connection {
+            stroke-dasharray: 5, 5;
+            stroke-width: 2px;
+        }
+
+        /* Additional button styles */
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .danger-button {
+            background: #662222 !important;
+        }
+
+        .danger-button:hover {
+            background: #993333 !important;
         }
     </style>
 </head>
@@ -242,90 +248,109 @@
             <span></span>
             <span></span>
         </div>
-        <h1>Capabilities</h1>
+        <h1>Commercial Connectedness</h1>
     </header>
 
     <div class="main-content">
         <div class="sidebar">
+            <button onclick="showAddClusterModal()">Add Cluster</button>
             <button onclick="showAddTaskModal()">Add Task</button>
-            <button onclick="showVisualizationOptions()">Visualization Options</button>
+            <button onclick="showDeleteModal()">Delete Node</button>
+            <button onclick="showEditModal()">Edit Node</button>
+            <button onclick="showConnectionModal()">Create Connection</button>
             <button onclick="showExportOptions()">Export Graph</button>
-            <button onclick="showSettings()">Settings</button>
-            <button onclick="showHelp()">Help</button>
         </div>
 
         <div class="graph-container">
             <svg id="graph"></svg>
         </div>
     </div>
+
+    <div id="clusterModal" class="modal">
+        <h3>Add New Cluster</h3>
+        <input type="text" id="clusterInput" placeholder="Enter cluster name">
+        <button class="submit" onclick="addCluster()">Add</button>
+        <button class="cancel" onclick="hideModals()">Cancel</button>
+    </div>
+
     <div id="taskModal" class="modal">
         <h3>Add New Task</h3>
-        <select id="categorySelect">
-            <option value="">Select Category</option>
+        <select id="clusterSelect">
+            <option value="">Select Cluster</option>
         </select>
         <input type="text" id="taskInput" placeholder="Enter task name">
         <button class="submit" onclick="addTask()">Add</button>
         <button class="cancel" onclick="hideModals()">Cancel</button>
     </div>
 
-    <div id="categoryModal" class="modal">
-        <h3>Add New Category</h3>
-        <input type="text" id="categoryInput" placeholder="Enter category name">
-        <select id="parentSelect">
-            <option value="">Select Parent Category (Optional)</option>
-        </select>
-        <button class="submit" onclick="addCategory()">Add</button>
-        <button class="cancel" onclick="hideModals()">Cancel</button>
+    <div id="deleteModal" class="modal">
+        <h3>Delete Node</h3>
+        <div class="modal-content">
+            <select id="deleteClusterSelect">
+                <option value="">Select Cluster</option>
+            </select>
+            <div class="node-list" id="deleteNodeList"></div>
+            <div id="deleteWarning" class="delete-warning"></div>
+        </div>
+        <div class="button-group">
+            <button class="submit danger-button" onclick="confirmDelete()">Delete</button>
+            <button class="cancel" onclick="hideModals()">Cancel</button>
+        </div>
     </div>
+
+    <div id="editModal" class="modal">
+        <h3>Edit Node</h3>
+        <div class="modal-content">
+            <select id="editClusterSelect">
+                <option value="">Select Cluster</option>
+            </select>
+            <div class="node-list" id="editNodeList"></div>
+            <input type="text" id="editNameInput" placeholder="New name">
+        </div>
+        <div class="button-group">
+            <button class="submit" onclick="confirmEdit()">Save</button>
+            <button class="cancel" onclick="hideModals()">Cancel</button>
+        </div>
+    </div>
+
+    <div id="connectionModal" class="modal">
+        <h3>Create Connection</h3>
+        <div class="modal-content">
+            <h4>Source</h4>
+            <select id="sourceClusterSelect">
+                <option value="">Select Source Cluster</option>
+            </select>
+            <div class="node-list" id="sourceNodeList"></div>
+
+            <h4>Target</h4>
+            <select id="targetClusterSelect">
+                <option value="">Select Target Cluster</option>
+            </select>
+            <div class="node-list" id="targetNodeList"></div>
+        </div>
+        <div class="button-group">
+            <button class="submit" onclick="createConnection()">Connect</button>
+            <button class="cancel" onclick="hideModals()">Cancel</button>
+        </div>
+    </div>
+
 
     <div class="modal-backdrop" onclick="hideModals()"></div>
 
-
-
     <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
     <script>
-        function toggleSidebar() {
-            const sidebar = document.querySelector('.sidebar');
-            sidebar.classList.toggle('open');
-
-            // Update graph width when sidebar is toggled
-            const width = window.innerWidth;
-            d3.select("#graph")
-                .attr("width", width);
-
-            // Update force simulation center
-            simulation.force("center", d3.forceCenter(width / 2, height / 2));
-            simulation.alpha(0.3).restart();
-        }
-        // Enhanced color palette for root's direct children
-        const rootChildColors = [
-            '#FF1E1E', // Red
-            '#FF00FF', // Magenta
-            '#FFFF00', // Yellow
-            '#00FFFF', // Cyan
-            '#FFA500', // Orange
-            '#9400D3', // Purple
-            '#32CD32', // Lime Green
-            '#FF69B4'  // Hot Pink
+        // Enhanced color palette for clusters
+        const clusterColors = [
+            '#FF1E1E', '#FFB200', '#EB5B00', '#D91656',
+            '#640D5F', '#FF8F00', '#FFDB00', '#4169E1',
+            '#EE66A6', '#00FF00'
         ];
 
         let nextColorIndex = 0;
-        // #00FF00
 
-        // Define vibrant colors for different node types
-        const nodeColors = {
-            root: '#FF1E1E',
-            category: {
-                'default': '#ff531e'
-            },
-            task: '#4169E1'
-        };
-
-        // Initial data structure
+        // Initial data structure - now empty as there's no root node
         let data = {
-            nodes: [
-                { id: "root", name: "Tasks", type: "root", group: "root" }
-            ],
+            nodes: [],
             links: []
         };
 
@@ -340,213 +365,161 @@
         const simulation = d3.forceSimulation()
             .force("link", d3.forceLink().id(d => d.id)
                 .distance(d => {
-                    if (d.source.type === "category" && d.target.type === "category") return 200;
-                    return 80;
+                    // Increase distance based on number of siblings
+                    if (d.source.type !== "cluster") {
+                        const siblingCount = getSiblingCount(d.source);
+                        return Math.max(100, 60 + siblingCount * 15);
+                    }
+                    return 60;
                 })
                 .strength(0.5))
             .force("charge", d3.forceManyBody()
-                .strength(d => {
-                    if (d.type === "root") return -1000;
-                    if (d.type === "category") return -500;
-                    return -100;
-                }))
+                .strength(d => d.type === "cluster" ? -500 : -100))
             .force("center", d3.forceCenter(width / 2, height / 2))
-            .force("collision", d3.forceCollide().radius(30))
+            .force("collision", d3.forceCollide().radius(d => {
+                // Increase collision radius for clusters based on number of children
+                if (d.type === "cluster") {
+                    const childCount = getClusterLeafCount(d.id);
+                    return Math.max(50, 30 + childCount * 10);
+                }
+                return 20;
+            }))
             .force("x", d3.forceX(width / 2).strength(0.05))
             .force("y", d3.forceY(height / 2).strength(0.05));
+
+
+        function circularLayoutForce(alpha) {
+            const clusters = data.nodes.filter(n => n.type === "cluster");
+
+            clusters.forEach(cluster => {
+                const children = data.nodes.filter(n =>
+                    n.type !== "cluster" &&
+                    data.links.some(l => l.target.id === cluster.id && l.source.id === n.id)
+                );
+
+                if (children.length > 0) {
+                    const radius = Math.max(80, children.length * 20);
+                    const angleStep = (2 * Math.PI) / children.length;
+
+                    children.forEach((child, i) => {
+                        const angle = i * angleStep;
+                        const targetX = cluster.x + radius * Math.cos(angle);
+                        const targetY = cluster.y + radius * Math.sin(angle);
+
+                        // Apply force towards the target position
+                        child.vx = (targetX - child.x) * alpha * 0.3;
+                        child.vy = (targetY - child.y) * alpha * 0.3;
+
+                        // Add slight repulsion between siblings
+                        children.forEach((sibling, j) => {
+                            if (i !== j) {
+                                const dx = child.x - sibling.x;
+                                const dy = child.y - sibling.y;
+                                const dist = Math.sqrt(dx * dx + dy * dy);
+                                if (dist < radius / 2) {
+                                    child.vx += dx * alpha * 0.1;
+                                    child.vy += dy * alpha * 0.1;
+                                }
+                            }
+                        });
+                    });
+                }
+            });
+        }
+
+        // Add the circular layout force to the simulation
+        simulation.force("circular", circularLayoutForce);
+
 
         let link = svg.append("g").selectAll("line");
         let node = svg.append("g").selectAll("g");
 
+
+        function getClusterLeafCount(clusterId) {
+            return data.nodes.filter(n =>
+                n.type === "task" && data.links.some(l =>
+                    l.source.id === n.id && l.target.id === clusterId
+                )
+            ).length;
+        }
+
+        function getNodeRadius(d) {
+            if (d.type === "cluster") {
+                const childCount = getClusterLeafCount(d.id);
+                // Start with a smaller base size, increase slightly with more children
+                return Math.min(25, 15 + childCount * 0.5);
+            }
+            // Child nodes start larger and decrease with siblings
+            const siblingCount = getSiblingCount(d);
+            return Math.max(8, 12 - siblingCount * 0.3);
+        }
+
+        function getSiblingCount(node) {
+            if (node.type === "cluster") return 0;
+
+            const parentLink = data.links.find(l => l.source.id === node.id);
+            if (!parentLink) return 0;
+
+            return data.links.filter(l =>
+                l.target.id === parentLink.target.id &&
+                l.source.id !== node.id
+            ).length;
+        }
+
         function getNodeColor(d) {
-            console.log(d);
-            console.log("this is getNodecolor's d");
-            if (d.type === "root") return nodeColors.root;
-            if (d.type === "category") {
-                if (d.color) return d.color;
-                return nodeColors.category[d.group] || nodeColors.category.default;
-            }
-            return nodeColors.task;
+            return d.color || '#4169E1';
         }
 
-        function getAllDescendants(nodeId) {
-            const descendants = new Set();
-            const stack = [nodeId];
-
-            while (stack.length > 0) {
-                const current = stack.pop();
-                descendants.add(current);
-
-                data.links.forEach(link => {
-                    if (link.target.id === current || link.target === current) {
-                        const sourceId = typeof link.source === 'object' ? link.source.id : link.source;
-                        if (!descendants.has(sourceId)) {
-                            stack.push(sourceId);
-                        }
-                    }
-                });
-            }
-
-            return descendants;
+        function toggleSidebar() {
+            const sidebar = document.querySelector('.sidebar');
+            sidebar.classList.toggle('open');
+            const width = window.innerWidth;
+            d3.select("#graph").attr("width", width);
+            simulation.force("center", d3.forceCenter(width / 2, height / 2));
+            simulation.alpha(0.3).restart();
         }
 
-        function highlightNode(selectedNode, isRootClick = false) {
-            // Reset all nodes and links to normal state
-            node.classed("dimmed", false).classed("highlighted", false);
-            link.classed("dimmed", false);
-
-            if (selectedNode) {
-                // Dim all nodes and links
-                node.classed("dimmed", true);
-                link.classed("dimmed", true);
-
-                let nodesToHighlight;
-                if (isRootClick || selectedNode.type === "root") {
-                    // For root node, highlight all nodes
-                    nodesToHighlight = new Set(data.nodes.map(n => n.id));
-                } else {
-                    // For other nodes, highlight direct connections
-                    nodesToHighlight = new Set();
-                    data.links.forEach(l => {
-                        if (l.source.id === selectedNode.id || l.target.id === selectedNode.id) {
-                            nodesToHighlight.add(l.source.id);
-                            nodesToHighlight.add(l.target.id);
-                        }
-                    });
-                }
-
-                node.filter(d => nodesToHighlight.has(d.id))
-                    .classed("dimmed", false);
-                node.filter(d => d.id === selectedNode.id)
-                    .classed("highlighted", true);
-
-                link.filter(l =>
-                    nodesToHighlight.has(l.source.id) || nodesToHighlight.has(l.target.id)
-                ).classed("dimmed", false);
-            }
-        }
-
-        function handleNodeClick(event, d) {
-            // Prevent double click event from firing
-            event.preventDefault();
-
-            if (event.detail === 1) { // Single click
-                highlightNode(d, d.type === "root");
-            } else if (event.detail === 2) { // Double click
-                if (d.type === "root" || d.type === "category") {
-                    showCategoryModal(d);
-                }
-            }
-        }
-
-        // function updateGraph() {
-        //     // Update links with dynamic colors
-        //     link = link.data(data.links, d => `${d.source.id}-${d.target.id}`);
-        //     link.exit().remove();
-        //     const linkEnter = link.enter().append("line")
-        //         .attr("class", "link")
-        //         .style("stroke", d => {
-        //             const sourceColor = typeof d.source === "object" ?
-        //                 getNodeColor(d.source) :
-        //                 getNodeColor(data.nodes.find(n => n.id === d.source));
-        //             return sourceColor;
-        //         });
-        //     link = linkEnter.merge(link);
-
-        //     // Update nodes with enhanced styling
-        //     node = node.data(data.nodes, d => d.id);
-        //     node.exit().remove();
-
-        //     const nodeEnter = node.enter().append("g")
-        //         .attr("class", "node")
-        //         .call(d3.drag()
-        //             .on("start", dragstarted)
-        //             .on("drag", dragged)
-        //             .on("end", dragended))
-        //         .on("click", handleNodeClick);
-
-        //     nodeEnter.append("circle")
-        //         .attr("r", d => {
-        //             if (d.type === "root") return 25;
-        //             if (d.type === "category") return 20;
-        //             return 10;
-        //         })
-        //         .style("fill", getNodeColor);
-
-        //     nodeEnter.append("text")
-        //         .attr("dy", ".35em")
-        //         .attr("x", d => d.type === "root" ? 30 : 20)
-        //         .text(d => d.name);
-
-        //     node = nodeEnter.merge(node);
-
-        //     // Update simulation
-        //     simulation.nodes(data.nodes)
-        //         .on("tick", ticked);
-
-        //     simulation.force("link")
-        //         .links(data.links);
-
-        //     simulation.alpha(1).restart();
-
-        //     updateSelects();
-        // }
+        let selectedNodeForDelete = null;
+        let selectedNodeForEdit = null;
+        let selectedSourceNode = null;
+        let selectedTargetNode = null;
 
         function updateGraph() {
-            // Update links with dynamic colors
+            // Update links
             link = link.data(data.links, d => `${d.source.id}-${d.target.id}`);
             link.exit().remove();
             const linkEnter = link.enter().append("line")
-                .attr("class", "link")
-                .style("stroke", d => {
-                    const sourceColor = typeof d.source === "object" ?
-                        getNodeColor(d.source) :
-                        getNodeColor(data.nodes.find(n => n.id === d.source));
-                    return sourceColor;
-                });
+                .attr("class", d => `link ${d.type === 'connection' ? 'connection' : ''}`);
             link = linkEnter.merge(link);
 
-            // Update nodes with enhanced styling
+            // Update nodes with proper data binding
             node = node.data(data.nodes, d => d.id);
             node.exit().remove();
 
             const nodeEnter = node.enter().append("g")
-                .attr("class", d => `node ${d.type === "root" ? "root-node" : ""}`)
+                .attr("class", "node")
                 .call(d3.drag()
                     .on("start", dragstarted)
                     .on("drag", dragged)
                     .on("end", dragended))
                 .on("click", handleNodeClick);
 
-            // Add different elements based on node type
-            nodeEnter.each(function (d) {
-                const node = d3.select(this);
+            nodeEnter.append("circle")
+                .attr("r", getNodeRadius);
 
-                if (d.type === "root") {
-                    // Add company logo for root node
-                    node.append("image")
-                        .attr("href", "https://www.ab-inbev.com/images/Header/abinbev-logo.svg") // Replace with your company logo URL
-                        .attr("width", 105)
-                        .attr("height", 105)
-                        .attr("preserveAspectRatio", "xMidYMid meet");
-                } else {
-                    // Add circles for other nodes
-                    node.append("circle")
-                        .attr("r", d => d.type === "category" ? 20 : 10)
-                        .style("fill", getNodeColor);
-                }
-
-                // Add text labels
-                node.append("text")
-                    .attr("dy", ".35em")
-                    .attr("x", d => {
-                        if (d.type === "root") return 35; // Adjust text position for root node
-                        return d.type === "category" ? 25 : 15;
-                    })
-                    .text(d => d.name === "Tasks" ? "" : d.name);
-            });
+            nodeEnter.append("text")
+                .attr("dy", ".35em")
+                .attr("x", d => d.type === "cluster" ? 25 : 15);
 
             node = nodeEnter.merge(node);
+
+            // Update existing nodes
+            node.select("circle")
+                .attr("r", getNodeRadius)
+                .style("fill", getNodeColor);
+
+            node.select("text")
+                .text(d => d.name);  // Update the text content
 
             // Update simulation
             simulation.nodes(data.nodes)
@@ -555,99 +528,403 @@
             simulation.force("link")
                 .links(data.links);
 
+            // Add circular layout force for clusters
+            data.nodes.filter(n => n.type === "cluster").forEach(cluster => {
+                const children = data.nodes.filter(n =>
+                    data.links.some(l => l.target.id === cluster.id && l.source.id === n.id)
+                );
+
+                if (children.length > 0) {
+                    const radius = Math.max(100, children.length * 20);
+                    const angleStep = (2 * Math.PI) / children.length;
+
+                    children.forEach((child, i) => {
+                        const angle = i * angleStep;
+                        const targetX = cluster.x + radius * Math.cos(angle);
+                        const targetY = cluster.y + radius * Math.sin(angle);
+
+                        child.x = child.x || targetX;
+                        child.y = child.y || targetY;
+                    });
+                }
+            });
+
             simulation.alpha(1).restart();
 
             updateSelects();
         }
 
+        // Delete functionality
+        function showDeleteModal() {
+            document.getElementById("deleteModal").style.display = "block";
+            document.querySelector(".modal-backdrop").style.display = "block";
+            updateDeleteClusterSelect();
+        }
 
-        function addCategory() {
-            const categoryName = document.getElementById("categoryInput").value;
-            const parentId = document.getElementById("parentSelect").value || "root";
-            console.log(parentId);
+        function updateDeleteClusterSelect() {
+            const select = document.getElementById("deleteClusterSelect");
+            select.innerHTML = '<option value="">Select Cluster</option>';
+            data.nodes
+                .filter(node => node.type === "cluster")
+                .forEach(cluster => {
+                    const option = document.createElement("option");
+                    option.value = cluster.id;
+                    option.textContent = cluster.name;
+                    select.appendChild(option);
+                });
+        }
 
+        function updateDeleteNodeList(clusterId) {
+            const nodeList = document.getElementById("deleteNodeList");
+            nodeList.innerHTML = '';
 
-            if (categoryName.trim() === "") return;
+            // Get all nodes in the cluster
+            const nodes = data.nodes.filter(node => {
+                if (node.id === clusterId) return true;
+                return data.links.some(link =>
+                    link.target.id === clusterId && link.source.id === node.id);
+            });
 
-            const categoryId = `category-${Date.now()}`;
+            nodes.forEach(node => {
+                const div = document.createElement("div");
+                div.className = "node-list-item";
+                div.textContent = `${node.name} (${node.type})`;
+                div.onclick = () => selectNodeForDelete(node, div);
+                nodeList.appendChild(div);
+            });
+        }
 
-            // Assign a unique color if it's a direct child of root
-            let categoryColor;
-            if (parentId === "root") {
-                categoryColor = rootChildColors[nextColorIndex % rootChildColors.length];
-                // nodeColors.category[`${categoryName}`] = categoryColor;
-                // console.log(categoryColor);
-                // console.log(parentId);
+        function selectNodeForDelete(node, element) {
+            selectedNodeForDelete = node;
+            document.querySelectorAll(".node-list-item").forEach(item =>
+                item.classList.remove("selected"));
+            element.classList.add("selected");
 
-                nextColorIndex++;
+            // Update warning message
+            const warning = document.getElementById("deleteWarning");
+            if (node.type === "cluster") {
+                const connectedNodes = data.nodes.filter(n =>
+                    data.links.some(l => l.target.id === node.id && l.source.id === n.id)
+                ).length;
+                warning.textContent =
+                    `Warning: Deleting this cluster will also delete ${connectedNodes} connected nodes!`;
+            } else {
+                warning.textContent = "";
+            }
+        }
+
+        function confirmDelete() {
+            if (!selectedNodeForDelete) return;
+
+            if (selectedNodeForDelete.type === "cluster") {
+                // Delete cluster and all connected nodes
+                const connectedNodeIds = data.nodes
+                    .filter(n => data.links.some(l =>
+                        l.target.id === selectedNodeForDelete.id && l.source.id === n.id
+                    ))
+                    .map(n => n.id);
+
+                data.nodes = data.nodes.filter(n =>
+                    n.id !== selectedNodeForDelete.id && !connectedNodeIds.includes(n.id));
+                data.links = data.links.filter(l =>
+                    !connectedNodeIds.includes(l.source.id) &&
+                    !connectedNodeIds.includes(l.target.id));
+            } else {
+                // Delete single node
+                data.nodes = data.nodes.filter(n => n.id !== selectedNodeForDelete.id);
+                data.links = data.links.filter(l =>
+                    l.source.id !== selectedNodeForDelete.id &&
+                    l.target.id !== selectedNodeForDelete.id);
             }
 
-            data.nodes.push({
-                id: categoryId,
-                name: categoryName,
-                type: "category",
-                group: parentId === "root" ? "default" : data.nodes.find(n => n.id === parentId).group,
-                color: categoryColor // Add the color property
-            });
-            data.links.push({ source: categoryId, target: parentId });
-
+            selectedNodeForDelete = null;
             hideModals();
             updateGraph();
         }
 
-        // Keep existing utility functions
+        // Edit functionality
+        function showEditModal() {
+            document.getElementById("editModal").style.display = "block";
+            document.querySelector(".modal-backdrop").style.display = "block";
+            updateEditClusterSelect();
+        }
+
+        function updateEditClusterSelect() {
+            const select = document.getElementById("editClusterSelect");
+            select.innerHTML = '<option value="">Select Cluster</option>';
+            data.nodes
+                .filter(node => node.type === "cluster")
+                .forEach(cluster => {
+                    const option = document.createElement("option");
+                    option.value = cluster.id;
+                    option.textContent = cluster.name;
+                    select.appendChild(option);
+                });
+        }
+
+        function updateEditNodeList(clusterId) {
+            const nodeList = document.getElementById("editNodeList");
+            nodeList.innerHTML = '';
+
+            const nodes = data.nodes.filter(node => {
+                if (node.id === clusterId) return true;
+                return data.links.some(link =>
+                    link.target.id === clusterId && link.source.id === node.id);
+            });
+
+            nodes.forEach(node => {
+                const div = document.createElement("div");
+                div.className = "node-list-item";
+                div.textContent = `${node.name} (${node.type})`;
+                div.onclick = () => selectNodeForEdit(node, div);
+                nodeList.appendChild(div);
+            });
+        }
+
+        function selectNodeForEdit(node, element) {
+            selectedNodeForEdit = node;
+            document.querySelectorAll(".node-list-item").forEach(item =>
+                item.classList.remove("selected"));
+            element.classList.add("selected");
+            document.getElementById("editNameInput").value = node.name;
+        }
+
+        function confirmEdit() {
+            if (!selectedNodeForEdit) return;
+            const newName = document.getElementById("editNameInput").value;
+            if (newName.trim() === "") return;
+
+            const node = data.nodes.find(n => n.id === selectedNodeForEdit.id);
+            if (node) {
+                node.name = newName;
+            }
+
+            selectedNodeForEdit = null;
+            hideModals();
+            updateGraph();
+        }
+
+        // Connection functionality
+        function showConnectionModal() {
+            document.getElementById("connectionModal").style.display = "block";
+            document.querySelector(".modal-backdrop").style.display = "block";
+            updateConnectionSelects();
+        }
+
+        function updateConnectionSelects() {
+            const sourceSelect = document.getElementById("sourceClusterSelect");
+            const targetSelect = document.getElementById("targetClusterSelect");
+
+            sourceSelect.innerHTML = '<option value="">Select Source Cluster</option>';
+            targetSelect.innerHTML = '<option value="">Select Target Cluster</option>';
+
+            data.nodes
+                .filter(node => node.type === "cluster")
+                .forEach(cluster => {
+                    const sourceOption = document.createElement("option");
+                    sourceOption.value = cluster.id;
+                    sourceOption.textContent = cluster.name;
+                    sourceSelect.appendChild(sourceOption.cloneNode(true));
+
+                    const targetOption = document.createElement("option");
+                    targetOption.value = cluster.id;
+                    targetOption.textContent = cluster.name;
+                    targetSelect.appendChild(targetOption);
+                });
+        }
+
+        function updateConnectionNodeList(clusterId, type) {
+            const nodeList = document.getElementById(`${type}NodeList`);
+            nodeList.innerHTML = '';
+
+            const nodes = data.nodes.filter(node => {
+                if (node.id === clusterId) return true;
+                return data.links.some(link =>
+                    link.target.id === clusterId && link.source.id === node.id);
+            });
+
+            nodes.forEach(node => {
+                const div = document.createElement("div");
+                div.className = "node-list-item";
+                div.textContent = `${node.name} (${node.type})`;
+                div.onclick = () => selectNodeForConnection(node, div, type);
+                nodeList.appendChild(div);
+            });
+        }
+
+        function selectNodeForConnection(node, element, type) {
+            if (type === "source") {
+                selectedSourceNode = node;
+            } else {
+                selectedTargetNode = node;
+            }
+
+            const nodeList = document.getElementById(`${type}NodeList`);
+            nodeList.querySelectorAll(".node-list-item").forEach(item =>
+                item.classList.remove("selected"));
+            element.classList.add("selected");
+        }
+
+        function createConnection() {
+            if (!selectedSourceNode || !selectedTargetNode) return;
+
+            // Check if connection already exists
+            const connectionExists = data.links.some(link =>
+                (link.source.id === selectedSourceNode.id && link.target.id === selectedTargetNode.id) ||
+                (link.source.id === selectedTargetNode.id && link.target.id === selectedSourceNode.id)
+            );
+
+            if (!connectionExists) {
+                data.links.push({
+                    source: selectedSourceNode.id,
+                    target: selectedTargetNode.id,
+                    type: 'connection'
+                });
+            }
+
+            selectedSourceNode = null;
+            selectedTargetNode = null;
+            hideModals();  // This should now properly hide all modals
+            updateGraph();
+        }
+
+        // Update event listeners
+        document.getElementById("deleteClusterSelect").addEventListener("change", (e) => {
+            updateDeleteNodeList(e.target.value);
+        });
+
+        document.getElementById("editClusterSelect").addEventListener("change", (e) => {
+            updateEditNodeList(e.target.value);
+        });
+
+        document.getElementById("sourceClusterSelect").addEventListener("change", (e) => {
+            updateConnectionNodeList(e.target.value, "source");
+        });
+
+        document.getElementById("targetClusterSelect").addEventListener("change", (e) => {
+            updateConnectionNodeList(e.target.value, "target");
+        });
+
+        // Initialize graph
+        // updateGraph();
+
+        function showAddClusterModal() {
+            document.getElementById("clusterModal").style.display = "block";
+            document.querySelector(".modal-backdrop").style.display = "block";
+        }
+
         function showAddTaskModal() {
             document.getElementById("taskModal").style.display = "block";
             document.querySelector(".modal-backdrop").style.display = "block";
         }
 
-        function showCategoryModal(parentNode) {
-            document.getElementById("categoryModal").style.display = "block";
-            document.querySelector(".modal-backdrop").style.display = "block";
-            if (parentNode) {
-                document.getElementById("parentSelect").value = parentNode.id;
-            }
-        }
-
         function hideModals() {
+            document.getElementById("clusterModal").style.display = "none";
             document.getElementById("taskModal").style.display = "none";
-            document.getElementById("categoryModal").style.display = "none";
+            document.getElementById("deleteModal").style.display = "none";
+            document.getElementById("editModal").style.display = "none";
+            document.getElementById("connectionModal").style.display = "none";  // Add this line
             document.querySelector(".modal-backdrop").style.display = "none";
+
+            // Clear any input fields
             document.getElementById("taskInput").value = "";
-            document.getElementById("categoryInput").value = "";
+            document.getElementById("clusterInput").value = "";
+            document.getElementById("editNameInput").value = "";
         }
 
-        function addTask() {
-            const category = document.getElementById("categorySelect").value;
-            const taskName = document.getElementById("taskInput").value;
-            console.log(category);
-            if (taskName.trim() === "" || !category) return;
+        function addCluster() {
+            const clusterName = document.getElementById("clusterInput").value;
+            if (clusterName.trim() === "") return;
 
-            const taskId = `task-${Date.now()}`;
+            const clusterId = `cluster-${Date.now()}`;
+            const clusterColor = clusterColors[nextColorIndex % clusterColors.length];
+            nextColorIndex++;
+
             data.nodes.push({
-                id: taskId,
-                name: taskName,
-                type: "task",
-                group: data.nodes.find(n => n.id === category).group
+                id: clusterId,
+                name: clusterName,
+                type: "cluster",
+                color: clusterColor
             });
-            data.links.push({ source: taskId, target: category });
 
             hideModals();
             updateGraph();
         }
 
-        // function ticked() {
-        //     link
-        //         .attr("x1", d => d.source.x)
-        //         .attr("y1", d => d.source.y)
-        //         .attr("x2", d => d.target.x)
-        //         .attr("y2", d => d.target.y);
+        function addTask() {
+            const clusterId = document.getElementById("clusterSelect").value;
+            const taskName = document.getElementById("taskInput").value;
+            if (taskName.trim() === "" || !clusterId) return;
 
-        //     node
-        //         .attr("transform", d => `translate(${d.x},${d.y})`);
-        // }
-        // Update the ticked function to handle the image position
+            const cluster = data.nodes.find(n => n.id === clusterId);
+            const taskId = `task-${Date.now()}`;
+
+            data.nodes.push({
+                id: taskId,
+                name: taskName,
+                type: "task",
+                color: cluster.color
+            });
+
+            data.links.push({
+                source: taskId,
+                target: clusterId
+            });
+
+            hideModals();
+            updateGraph();
+        }
+
+        function handleNodeClick(event, d) {
+            event.preventDefault();
+            highlightNode(d);
+        }
+
+        function highlightNode(selectedNode) {
+            node.classed("dimmed", false).classed("highlighted", false);
+            link.classed("dimmed", false);
+
+            if (selectedNode) {
+                node.classed("dimmed", true);
+                link.classed("dimmed", true);
+
+                const connectedNodes = new Set();
+                data.links.forEach(l => {
+                    if (l.source.id === selectedNode.id || l.target.id === selectedNode.id) {
+                        connectedNodes.add(l.source.id);
+                        connectedNodes.add(l.target.id);
+                    }
+                });
+
+                node.filter(d => connectedNodes.has(d.id))
+                    .classed("dimmed", false);
+                node.filter(d => d.id === selectedNode.id)
+                    .classed("highlighted", true);
+
+                link.filter(l =>
+                    connectedNodes.has(l.source.id) && connectedNodes.has(l.target.id)
+                ).classed("dimmed", false);
+            }
+        }
+
+        function updateSelects() {
+            const clusterSelect = document.getElementById("clusterSelect");
+            clusterSelect.innerHTML = '<option value="">Select Cluster</option>';
+
+            data.nodes
+                .filter(node => node.type === "cluster")
+                .forEach(cluster => {
+                    const option = document.createElement("option");
+                    option.value = cluster.id;
+                    option.textContent = cluster.name;
+                    clusterSelect.appendChild(option);
+                });
+        }
+
         function ticked() {
+            circularLayoutForce(simulation.alpha());
+
+            // Update positions
             link
                 .attr("x1", d => d.source.x)
                 .attr("y1", d => d.source.y)
@@ -675,50 +952,24 @@
             event.subject.fy = null;
         }
 
-        function updateSelects() {
-            // Update category select for tasks
-            const categorySelect = document.getElementById("categorySelect");
-            categorySelect.innerHTML = '<option value="">Select Category</option>';
-
-            data.nodes
-                .filter(node => node.type === "category")
-                .forEach(category => {
-                    const option = document.createElement("option");
-                    option.value = category.id;
-                    option.textContent = category.name;
-                    categorySelect.appendChild(option);
-                });
-
-            // Update parent select for categories
-            const parentSelect = document.getElementById("parentSelect");
-            parentSelect.innerHTML = '<option value="">Select Parent Category (Optional)</option>';
-
-            data.nodes
-                .filter(node => node.type === "root" || node.type === "category")
-                .forEach(node => {
-                    const option = document.createElement("option");
-                    option.value = node.id;
-                    option.textContent = node.name;
-                    parentSelect.appendChild(option);
-                });
-        }
-
         // Dummy functions for future features
-        function showVisualizationOptions() {
-            alert("Visualization Options - Feature coming soon!");
-        }
+        // function showVisualizationOptions() {
+        //     alert("Visualization Options - Feature coming soon!");
+        // }
 
-        function showExportOptions() {
-            alert("Export Graph - Feature coming soon!");
-        }
+        // function showExportOptions() {
+        //     alert("Export Graph - Feature coming soon!");
+        // }
 
-        function showSettings() {
-            alert("Settings - Feature coming soon!");
-        }
+        // function showSettings() {
+        //     alert("Settings - Feature coming soon!");
+        // }
 
-        function showHelp() {
-            alert("Help - Feature coming soon!");
-        }
+        // function showHelp() {
+        //     alert("Help - Feature coming soon!");
+        // }
+
+        // Handle window resize
         window.addEventListener('resize', () => {
             const width = window.innerWidth;
             const height = window.innerHeight - 64;
@@ -730,7 +981,7 @@
             simulation.alpha(0.3).restart();
         });
 
-        // Initial render
+        // Initialize graph
         updateGraph();
     </script>
 </body>
