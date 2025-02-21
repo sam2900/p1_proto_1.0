@@ -238,6 +238,23 @@
         .danger-button:hover {
             background: #993333 !important;
         }
+
+        .link {
+            stroke: rgba(255, 255, 255, 0.6);
+            stroke-opacity: 0.6;
+            stroke-width: 1px;
+        }
+
+        /* Update connection style to focus on the dash pattern only */
+        .link.connection {
+            stroke-dasharray: 5, 5;
+            stroke-width: 2px;
+            stroke-opacity: 0.8;
+        }
+
+        .link.connection.dimmed {
+            stroke-opacity: 0.2;
+        }
     </style>
 </head>
 
@@ -491,6 +508,15 @@
             const linkEnter = link.enter().append("line")
                 .attr("class", d => `link ${d.type === 'connection' ? 'connection' : ''}`);
             link = linkEnter.merge(link);
+
+            link.style("stroke", d => {
+                if (d.type === 'connection') {
+                    // Find the source node and use its color
+                    const sourceNode = data.nodes.find(n => n.id === (typeof d.source === 'object' ? d.source.id : d.source));
+                    return sourceNode ? sourceNode.color : '#ffffff';
+                }
+                return 'rgba(255, 255, 255, 0.6)';  // Default color for hierarchical links
+            });
 
             // Update nodes with proper data binding
             node = node.data(data.nodes, d => d.id);
@@ -784,7 +810,7 @@
 
             selectedSourceNode = null;
             selectedTargetNode = null;
-            hideModals();  // This should now properly hide all modals
+            hideModals();
             updateGraph();
         }
 
