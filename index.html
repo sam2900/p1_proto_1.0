@@ -255,6 +255,93 @@
         .link.connection.dimmed {
             stroke-opacity: 0.2;
         }
+
+        .node.root circle {
+            stroke: #FFD700;
+            stroke-width: 3px;
+            filter: drop-shadow(0 0 12px rgba(255, 215, 0, 0.5));
+        }
+
+        .node.root text {
+            font-weight: bold;
+            font-size: 14px;
+            fill: #FFD700;
+        }
+
+        /* Style for root connections */
+        .link.root-connection {
+            stroke: #FFD700;
+            stroke-dasharray: 5, 5;
+            stroke-width: 2px;
+            stroke-opacity: 0.8;
+        }
+
+
+        .right-panel {
+            position: fixed;
+            right: 0;
+            top: 64px;
+            width: 300px;
+            height: calc(100vh - 64px);
+            background: #111111;
+            border-left: 1px solid #333;
+            padding: 20px;
+            color: #ffffff;
+            overflow-y: auto;
+        }
+
+        .stats-container {
+            margin-bottom: 30px;
+            padding: 15px;
+            background: #222;
+            border-radius: 8px;
+            border: 1px solid #444;
+        }
+
+        .stat-item {
+            display: flex;
+            justify-content: space-between;
+            margin: 10px 0;
+            padding: 8px;
+            background: #333;
+            border-radius: 4px;
+        }
+
+        .logs-container {
+            padding: 15px;
+            background: #222;
+            border-radius: 8px;
+            border: 1px solid #444;
+        }
+
+        .log-item {
+            padding: 10px;
+            margin: 8px 0;
+            background: #333;
+            border-radius: 4px;
+            font-size: 0.9em;
+            border-left: 3px solid #4169E1;
+        }
+
+        .log-timestamp {
+            font-size: 0.8em;
+            color: #888;
+            margin-bottom: 4px;
+        }
+
+        .user-info-modal {
+            width: 300px;
+        }
+
+        .user-info-fields {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .main-content {
+            margin-right: 300px;
+        }
     </style>
 </head>
 
@@ -270,12 +357,13 @@
 
     <div class="main-content">
         <div class="sidebar">
+            <button onclick="showAddRootModal()">Add Root Node</button>
             <button onclick="showAddClusterModal()">Add Cluster</button>
             <button onclick="showAddTaskModal()">Add Task</button>
             <button onclick="showDeleteModal()">Delete Node</button>
             <button onclick="showEditModal()">Edit Node</button>
             <button onclick="showConnectionModal()">Create Connection</button>
-            <button onclick="showExportOptions()">Export Graph</button>
+            <button onclick="showRootConnectionModal()">Connect to Root</button>
         </div>
 
         <div class="graph-container">
@@ -283,12 +371,76 @@
         </div>
     </div>
 
+    <div class="right-panel">
+        <div class="stats-container">
+            <h3>Graph Statistics</h3>
+            <div class="stat-item">
+                <span>Root Nodes:</span>
+                <span id="rootNodeCount">0</span>
+            </div>
+            <div class="stat-item">
+                <span>Clusters:</span>
+                <span id="clusterCount">0</span>
+            </div>
+            <div class="stat-item">
+                <span>Child Nodes:</span>
+                <span id="childNodeCount">0</span>
+            </div>
+            <div class="stat-item">
+                <span>Total Connections:</span>
+                <span id="connectionCount">0</span>
+            </div>
+        </div>
+
+        <div class="logs-container">
+            <h3>Recent Activity</h3>
+            <div id="activityLogs"></div>
+        </div>
+    </div>
+
+    <div id="rootModal" class="modal">
+        <h3>Add Root Node</h3>
+        <input type="text" id="rootInput" placeholder="Enter root node name">
+        <div class="user-info-fields">
+            <input type="text" id="rootUserNameInput" placeholder="Your Name" class="modal-input">
+            <input type="text" id="rootBusinessFunctionInput" placeholder="Business Function" class="modal-input">
+        </div>
+        <div class="button-group">
+            <button class="submit" onclick="addRootNode()">Add</button>
+            <button class="cancel" onclick="hideModals()">Cancel</button>
+        </div>
+    </div>
+
+    <!-- Add new modal for root connections -->
+    <div id="rootConnectionModal" class="modal">
+        <h3>Connect to Root Node</h3>
+        <div class="modal-content">
+            <select id="rootConnectionClusterSelect">
+                <option value="">Select Cluster</option>
+            </select>
+            <div class="node-list" id="rootConnectionNodeList"></div>
+        </div>
+        <div class="user-info-fields">
+            <input type="text" id="rootConnectionUserNameInput" placeholder="Your Name" class="modal-input">
+            <input type="text" id="rootConnectionBusinessFunctionInput" placeholder="Business Function"
+                class="modal-input">
+        </div>
+        <div class="button-group">
+            <button class="submit" onclick="createRootConnection()">Connect to Root</button>
+            <button class="cancel" onclick="hideModals()">Cancel</button>
+        </div>
+    </div>
     <div id="clusterModal" class="modal">
         <h3>Add New Cluster</h3>
         <input type="text" id="clusterInput" placeholder="Enter cluster name">
+        <div class="user-info-fields">
+            <input type="text" id="clusterUserNameInput" placeholder="Your Name" class="modal-input">
+            <input type="text" id="clusterBusinessFunctionInput" placeholder="Business Function" class="modal-input">
+        </div>
         <button class="submit" onclick="addCluster()">Add</button>
         <button class="cancel" onclick="hideModals()">Cancel</button>
     </div>
+
 
     <div id="taskModal" class="modal">
         <h3>Add New Task</h3>
@@ -296,9 +448,14 @@
             <option value="">Select Cluster</option>
         </select>
         <input type="text" id="taskInput" placeholder="Enter task name">
+        <div class="user-info-fields">
+            <input type="text" id="taskUserNameInput" placeholder="Your Name" class="modal-input">
+            <input type="text" id="taskBusinessFunctionInput" placeholder="Business Function" class="modal-input">
+        </div>
         <button class="submit" onclick="addTask()">Add</button>
         <button class="cancel" onclick="hideModals()">Cancel</button>
     </div>
+
 
     <div id="deleteModal" class="modal">
         <h3>Delete Node</h3>
@@ -308,6 +465,10 @@
             </select>
             <div class="node-list" id="deleteNodeList"></div>
             <div id="deleteWarning" class="delete-warning"></div>
+        </div>
+        <div class="user-info-fields">
+            <input type="text" id="deleteUserNameInput" placeholder="Your Name" class="modal-input">
+            <input type="text" id="deleteBusinessFunctionInput" placeholder="Business Function" class="modal-input">
         </div>
         <div class="button-group">
             <button class="submit danger-button" onclick="confirmDelete()">Delete</button>
@@ -345,6 +506,10 @@
             </select>
             <div class="node-list" id="targetNodeList"></div>
         </div>
+        <div id="userInfoFields" class="user-info-fields">
+            <input type="text" id="userNameInput" placeholder="Your Name" class="modal-input">
+            <input type="text" id="businessFunctionInput" placeholder="Business Function" class="modal-input">
+        </div>
         <div class="button-group">
             <button class="submit" onclick="createConnection()">Connect</button>
             <button class="cancel" onclick="hideModals()">Cancel</button>
@@ -370,6 +535,50 @@
             nodes: [],
             links: []
         };
+
+        const maxLogEntries = 8;
+        let activityLogs = [];
+
+        function updateStats() {
+            document.getElementById('rootNodeCount').textContent = data.nodes.filter(n => n.type === 'root').length;
+            document.getElementById('clusterCount').textContent = data.nodes.filter(n => n.type === 'cluster').length;
+            document.getElementById('childNodeCount').textContent = data.nodes.filter(n => n.type === 'task').length;
+            document.getElementById('connectionCount').textContent = data.links.length;
+        }
+
+        function addActivityLog(action, userName, businessFunction) {
+            const timestamp = new Date().toLocaleString();
+            const logEntry = {
+                timestamp,
+                action,
+                userName,
+                businessFunction
+            };
+
+            activityLogs.unshift(logEntry);
+            if (activityLogs.length > maxLogEntries) {
+                activityLogs.pop();
+            }
+
+            updateActivityLogs();
+        }
+
+        function updateActivityLogs() {
+            const logsContainer = document.getElementById('activityLogs');
+            logsContainer.innerHTML = '';
+
+            activityLogs.forEach(log => {
+                const logItem = document.createElement('div');
+                logItem.className = 'log-item';
+                logItem.innerHTML = `
+                    <div class="log-timestamp">${log.timestamp}</div>
+                    <div>${log.userName} (${log.businessFunction})</div>
+                    <div>${log.action}</div>
+                `;
+                logsContainer.appendChild(logItem);
+            });
+        }
+
 
         const width = window.innerWidth - 200;
         const height = window.innerHeight;
@@ -487,6 +696,138 @@
             return d.color || '#4169E1';
         }
 
+        let rootNode = null;
+
+        // Add root node functions
+        function showAddRootModal() {
+            if (rootNode) {
+                alert("Root node already exists!");
+                return;
+            }
+            document.getElementById("rootModal").style.display = "block";
+            document.querySelector(".modal-backdrop").style.display = "block";
+        }
+
+        function addRootNode() {
+            const rootName = document.getElementById("rootInput").value;
+            const userName = document.getElementById("rootUserNameInput").value;
+            const businessFunction = document.getElementById("rootBusinessFunctionInput").value;
+
+            if (rootName.trim() === "" || userName.trim() === "" || businessFunction.trim() === "") {
+                alert("Please fill in all fields");
+                return;
+            }
+
+            rootNode = {
+                id: `root-${Date.now()}`,
+                name: rootName,
+                type: "root",
+                color: "#FFD700"
+            };
+
+            data.nodes.push(rootNode);
+            addActivityLog(`Added root node "${rootName}"`, userName, businessFunction);
+            hideModals();
+            updateGraph();
+            updateStats();
+        }
+
+        function showRootConnectionModal() {
+            if (!rootNode) {
+                alert("Please add a root node first!");
+                return;
+            }
+            document.getElementById("rootConnectionModal").style.display = "block";
+            document.querySelector(".modal-backdrop").style.display = "block";
+            updateRootConnectionSelects();
+        }
+
+        function updateRootConnectionSelects() {
+            const select = document.getElementById("rootConnectionClusterSelect");
+            select.innerHTML = '<option value="">Select Cluster</option>';
+            data.nodes
+                .filter(node => node.type === "cluster")
+                .forEach(cluster => {
+                    const option = document.createElement("option");
+                    option.value = cluster.id;
+                    option.textContent = cluster.name;
+                    select.appendChild(option);
+                });
+        }
+
+        function updateRootConnectionNodeList(clusterId) {
+            const nodeList = document.getElementById("rootConnectionNodeList");
+            nodeList.innerHTML = '';
+
+            // Add the cluster itself as an option
+            const cluster = data.nodes.find(n => n.id === clusterId);
+            if (cluster) {
+                const clusterDiv = document.createElement("div");
+                clusterDiv.className = "node-list-item";
+                clusterDiv.textContent = `${cluster.name} (cluster)`;
+                clusterDiv.onclick = () => selectNodeForRootConnection(cluster, clusterDiv);
+                nodeList.appendChild(clusterDiv);
+            }
+
+            // Add all nodes in the cluster
+            const nodes = data.nodes.filter(node =>
+                data.links.some(link => link.target.id === clusterId && link.source.id === node.id)
+            );
+
+            nodes.forEach(node => {
+                const div = document.createElement("div");
+                div.className = "node-list-item";
+                div.textContent = `${node.name} (${node.type})`;
+                div.onclick = () => selectNodeForRootConnection(node, div);
+                nodeList.appendChild(div);
+            });
+        }
+
+        let selectedNodeForRootConnection = null;
+
+        function selectNodeForRootConnection(node, element) {
+            selectedNodeForRootConnection = node;
+            document.querySelectorAll(".node-list-item").forEach(item =>
+                item.classList.remove("selected"));
+            element.classList.add("selected");
+        }
+
+        function createRootConnection() {
+            if (!selectedNodeForRootConnection || !rootNode) return;
+
+            const userName = document.getElementById("rootConnectionUserNameInput").value;
+            const businessFunction = document.getElementById("rootConnectionBusinessFunctionInput").value;
+
+            if (userName.trim() === "" || businessFunction.trim() === "") {
+                alert("Please fill in all fields");
+                return;
+            }
+
+            // Check if connection already exists
+            const connectionExists = data.links.some(link =>
+                (link.source.id === selectedNodeForRootConnection.id && link.target.id === rootNode.id) ||
+                (link.source.id === rootNode.id && link.target.id === selectedNodeForRootConnection.id)
+            );
+
+            if (!connectionExists) {
+                data.links.push({
+                    source: selectedNodeForRootConnection.id,
+                    target: rootNode.id,
+                    type: 'root-connection'
+                });
+
+                addActivityLog(
+                    `Connected "${selectedNodeForRootConnection.name}" to root node`,
+                    userName,
+                    businessFunction
+                );
+            }
+
+            selectedNodeForRootConnection = null;
+            hideModals();
+            updateGraph();
+        }
+
         function toggleSidebar() {
             const sidebar = document.querySelector('.sidebar');
             sidebar.classList.toggle('open');
@@ -506,29 +847,35 @@
             link = link.data(data.links, d => `${d.source.id}-${d.target.id}`);
             link.exit().remove();
             const linkEnter = link.enter().append("line")
-                .attr("class", d => `link ${d.type === 'connection' ? 'connection' : ''}`);
+                .attr("class", d => {
+                    if (d.type === 'root-connection') return 'link root-connection';
+                    if (d.type === 'connection') return 'link connection';
+                    return 'link';
+                });
             link = linkEnter.merge(link);
-
             link.style("stroke", d => {
+                if (d.type === 'root-connection') return '#FFD700';
                 if (d.type === 'connection') {
-                    // Find the source node and use its color
                     const sourceNode = data.nodes.find(n => n.id === (typeof d.source === 'object' ? d.source.id : d.source));
                     return sourceNode ? sourceNode.color : '#ffffff';
                 }
-                return 'rgba(255, 255, 255, 0.6)';  // Default color for hierarchical links
+                return 'rgba(255, 255, 255, 0.6)';
             });
+
 
             // Update nodes with proper data binding
             node = node.data(data.nodes, d => d.id);
             node.exit().remove();
 
+
             const nodeEnter = node.enter().append("g")
-                .attr("class", "node")
+                .attr("class", d => `node ${d.type === 'root' ? 'root' : ''}`)
                 .call(d3.drag()
                     .on("start", dragstarted)
                     .on("drag", dragged)
                     .on("end", dragended))
                 .on("click", handleNodeClick);
+
 
             nodeEnter.append("circle")
                 .attr("r", getNodeRadius);
@@ -576,9 +923,17 @@
             });
 
             simulation.alpha(1).restart();
-
+            const originalUpdateGraph = updateGraph;
+            updateGraph = function () {
+                originalUpdateGraph();
+                updateStats();
+            };
             updateSelects();
+
         }
+        document.getElementById("rootConnectionClusterSelect").addEventListener("change", (e) => {
+            updateRootConnectionNodeList(e.target.value);
+        });
 
         // Delete functionality
         function showDeleteModal() {
@@ -642,6 +997,14 @@
         function confirmDelete() {
             if (!selectedNodeForDelete) return;
 
+            const userName = document.getElementById("deleteUserNameInput").value;
+            const businessFunction = document.getElementById("deleteBusinessFunctionInput").value;
+
+            if (userName.trim() === "" || businessFunction.trim() === "") {
+                alert("Please fill in all fields");
+                return;
+            }
+
             if (selectedNodeForDelete.type === "cluster") {
                 // Delete cluster and all connected nodes
                 const connectedNodeIds = data.nodes
@@ -652,20 +1015,40 @@
 
                 data.nodes = data.nodes.filter(n =>
                     n.id !== selectedNodeForDelete.id && !connectedNodeIds.includes(n.id));
+
+                // Remove all links connected to the cluster or its nodes
                 data.links = data.links.filter(l =>
                     !connectedNodeIds.includes(l.source.id) &&
-                    !connectedNodeIds.includes(l.target.id));
+                    !connectedNodeIds.includes(l.target.id) &&
+                    l.source.id !== selectedNodeForDelete.id &&
+                    l.target.id !== selectedNodeForDelete.id);
+
+                addActivityLog(
+                    `Deleted cluster "${selectedNodeForDelete.name}" and its connected nodes`,
+                    userName,
+                    businessFunction
+                );
             } else {
                 // Delete single node
                 data.nodes = data.nodes.filter(n => n.id !== selectedNodeForDelete.id);
+
+                // Remove all links connected to this node
+                const initialLinkCount = data.links.length;
                 data.links = data.links.filter(l =>
                     l.source.id !== selectedNodeForDelete.id &&
                     l.target.id !== selectedNodeForDelete.id);
+
+                addActivityLog(
+                    `Deleted node "${selectedNodeForDelete.name}"`,
+                    userName,
+                    businessFunction
+                );
             }
 
             selectedNodeForDelete = null;
             hideModals();
             updateGraph();
+            updateStats();
         }
 
         // Edit functionality
@@ -794,7 +1177,14 @@
         function createConnection() {
             if (!selectedSourceNode || !selectedTargetNode) return;
 
-            // Check if connection already exists
+            const userName = document.getElementById("userNameInput").value;
+            const businessFunction = document.getElementById("businessFunctionInput").value;
+
+            if (userName.trim() === "" || businessFunction.trim() === "") {
+                alert("Please fill in all fields");
+                return;
+            }
+
             const connectionExists = data.links.some(link =>
                 (link.source.id === selectedSourceNode.id && link.target.id === selectedTargetNode.id) ||
                 (link.source.id === selectedTargetNode.id && link.target.id === selectedSourceNode.id)
@@ -806,12 +1196,19 @@
                     target: selectedTargetNode.id,
                     type: 'connection'
                 });
+
+                addActivityLog(
+                    `Created connection between "${selectedSourceNode.name}" and "${selectedTargetNode.name}"`,
+                    userName,
+                    businessFunction
+                );
             }
 
             selectedSourceNode = null;
             selectedTargetNode = null;
             hideModals();
             updateGraph();
+            updateStats();
         }
 
         // Update event listeners
@@ -845,22 +1242,46 @@
         }
 
         function hideModals() {
+            document.getElementById("rootModal").style.display = "none";
+            document.getElementById("rootConnectionModal").style.display = "none";
             document.getElementById("clusterModal").style.display = "none";
             document.getElementById("taskModal").style.display = "none";
             document.getElementById("deleteModal").style.display = "none";
             document.getElementById("editModal").style.display = "none";
             document.getElementById("connectionModal").style.display = "none";  // Add this line
             document.querySelector(".modal-backdrop").style.display = "none";
-
             // Clear any input fields
-            document.getElementById("taskInput").value = "";
+            document.getElementById("rootInput").value = "";
+            document.getElementById("rootUserNameInput").value = "";
+            document.getElementById("rootBusinessFunctionInput").value = "";
+
             document.getElementById("clusterInput").value = "";
+            document.getElementById("clusterUserNameInput").value = "";
+            document.getElementById("clusterBusinessFunctionInput").value = "";
+
+            document.getElementById("taskInput").value = "";
+            document.getElementById("taskUserNameInput").value = "";
+            document.getElementById("taskBusinessFunctionInput").value = "";
+            document.getElementById("rootConnectionUserNameInput").value = "";
+            document.getElementById("rootConnectionBusinessFunctionInput").value = "";
+            document.getElementById("deleteUserNameInput").value = "";
+            document.getElementById("deleteBusinessFunctionInput").value = "";
+
+            // Hide all modals
+            document.querySelectorAll(".modal").forEach(modal => modal.style.display = "none");
+            document.querySelector(".modal-backdrop").style.display = "none";
             document.getElementById("editNameInput").value = "";
         }
 
         function addCluster() {
             const clusterName = document.getElementById("clusterInput").value;
-            if (clusterName.trim() === "") return;
+            const userName = document.getElementById("clusterUserNameInput").value;
+            const businessFunction = document.getElementById("clusterBusinessFunctionInput").value;
+
+            if (clusterName.trim() === "" || userName.trim() === "" || businessFunction.trim() === "") {
+                alert("Please fill in all fields");
+                return;
+            }
 
             const clusterId = `cluster-${Date.now()}`;
             const clusterColor = clusterColors[nextColorIndex % clusterColors.length];
@@ -873,14 +1294,22 @@
                 color: clusterColor
             });
 
+            addActivityLog(`Added cluster "${clusterName}"`, userName, businessFunction);
             hideModals();
             updateGraph();
+            updateStats();
         }
 
         function addTask() {
             const clusterId = document.getElementById("clusterSelect").value;
             const taskName = document.getElementById("taskInput").value;
-            if (taskName.trim() === "" || !clusterId) return;
+            const userName = document.getElementById("taskUserNameInput").value;
+            const businessFunction = document.getElementById("taskBusinessFunctionInput").value;
+
+            if (taskName.trim() === "" || !clusterId || userName.trim() === "" || businessFunction.trim() === "") {
+                alert("Please fill in all fields");
+                return;
+            }
 
             const cluster = data.nodes.find(n => n.id === clusterId);
             const taskId = `task-${Date.now()}`;
@@ -897,8 +1326,11 @@
                 target: clusterId
             });
 
+            addActivityLog(`Added task "${taskName}" to cluster "${cluster.name}"`, userName, businessFunction);
             hideModals();
             updateGraph();
+            updateStats();
+
         }
 
         function handleNodeClick(event, d) {
@@ -978,23 +1410,6 @@
             event.subject.fy = null;
         }
 
-        // Dummy functions for future features
-        // function showVisualizationOptions() {
-        //     alert("Visualization Options - Feature coming soon!");
-        // }
-
-        // function showExportOptions() {
-        //     alert("Export Graph - Feature coming soon!");
-        // }
-
-        // function showSettings() {
-        //     alert("Settings - Feature coming soon!");
-        // }
-
-        // function showHelp() {
-        //     alert("Help - Feature coming soon!");
-        // }
-
         // Handle window resize
         window.addEventListener('resize', () => {
             const width = window.innerWidth;
@@ -1006,6 +1421,9 @@
             simulation.force("center", d3.forceCenter(width / 2, height / 2));
             simulation.alpha(0.3).restart();
         });
+
+        updateStats();
+        updateActivityLogs();
 
         // Initialize graph
         updateGraph();
