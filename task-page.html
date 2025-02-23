@@ -1,0 +1,783 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Task Details</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            background: #000000;
+            color: #ffffff;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI";
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .task-header {
+            margin-bottom: 30px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #333;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .task-form {
+            background: #111;
+            padding: 25px;
+            border-radius: 8px;
+            border: 1px solid #333;
+            margin-bottom: 20px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #ccc;
+            font-weight: bold;
+        }
+
+        input[type="text"],
+        textarea {
+            width: 100%;
+            padding: 10px;
+            background: #222;
+            border: 1px solid #444;
+            border-radius: 4px;
+            color: #fff;
+            font-size: 14px;
+        }
+
+        textarea {
+            min-height: 100px;
+            resize: vertical;
+        }
+
+        .slider-container {
+            position: relative;
+            padding: 10px 0;
+        }
+
+        .slider {
+            width: 100%;
+            height: 5px;
+            background: #333;
+            border-radius: 5px;
+            outline: none;
+            -webkit-appearance: none;
+        }
+
+        .slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 20px;
+            height: 20px;
+            background: #4169E1;
+            border-radius: 50%;
+            cursor: pointer;
+            transition: background 0.15s ease;
+        }
+
+        .slider::-webkit-slider-thumb:hover {
+            background: #5179F1;
+        }
+
+        .slider-value {
+            position: absolute;
+            top: -25px;
+            color: #fff;
+            font-size: 14px;
+        }
+
+        button {
+            background: #4169E1;
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background 0.2s ease;
+        }
+
+        button:hover {
+            background: #5179F1;
+        }
+
+        .success-message {
+            display: none;
+            background: #28a745;
+            color: white;
+            padding: 10px;
+            border-radius: 4px;
+            margin-top: 20px;
+            text-align: center;
+        }
+
+        /* View mode styles */
+        .view-mode .detail-card {
+            background: #111;
+            padding: 25px;
+            border-radius: 8px;
+            border: 1px solid #333;
+            margin-bottom: 20px;
+        }
+
+        .view-mode .detail-item {
+            margin-bottom: 20px;
+        }
+
+        .view-mode .detail-value {
+            background: #222;
+            padding: 15px;
+            border-radius: 4px;
+            margin-top: 5px;
+            white-space: pre-line;
+        }
+
+        .edit-button {
+            background: #28a745;
+            padding: 8px 16px;
+            font-size: 14px;
+        }
+
+        .edit-button:hover {
+            background: #218838;
+        }
+
+        .progress-bar {
+            background: #222;
+            height: 20px;
+            border-radius: 10px;
+            overflow: hidden;
+            margin-top: 10px;
+        }
+
+        .progress-fill {
+            height: 100%;
+            transition: width 0.3s ease, background-color 0.3s ease;
+        }
+
+        /* New styles for attachments */
+        .attachments-section {
+            margin-top: 20px;
+        }
+
+        .attachment-list {
+            list-style: none;
+            padding: 0;
+        }
+
+        .attachment-item {
+            display: flex;
+            align-items: center;
+            background: #222;
+            padding: 10px;
+            margin-bottom: 10px;
+            border-radius: 4px;
+        }
+
+        .attachment-name {
+            flex-grow: 1;
+        }
+
+        .attachment-size {
+            color: #888;
+            margin: 0 15px;
+        }
+
+        /* History styles */
+        .history-section {
+            margin-top: 20px;
+        }
+
+        .history-item {
+            background: #222;
+            padding: 15px;
+            margin-bottom: 10px;
+            border-radius: 4px;
+        }
+
+        .history-date {
+            color: #888;
+            font-size: 0.9em;
+        }
+
+        .history-changes {
+            margin-top: 5px;
+        }
+
+        /* Comments styles */
+        .comments-section {
+            margin-top: 20px;
+        }
+
+        .comment {
+            background: #222;
+            padding: 15px;
+            margin-bottom: 10px;
+            border-radius: 4px;
+        }
+
+        .comment-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+        }
+
+        .comment-author {
+            font-weight: bold;
+        }
+
+        .comment-date {
+            color: #888;
+            font-size: 0.9em;
+        }
+
+        .file-drop-zone {
+            border: 2px dashed #444;
+            border-radius: 4px;
+            padding: 20px;
+            text-align: center;
+            margin-bottom: 10px;
+            cursor: pointer;
+        }
+
+        .file-drop-zone:hover {
+            border-color: #666;
+            background: #1a1a1a;
+        }
+
+        #editForm {
+            display: none;
+        }
+
+        #viewMode {
+            display: none;
+        }
+
+        .tab-container {
+            margin-top: 20px;
+        }
+
+        .tab-buttons {
+            display: flex;
+            margin-bottom: 15px;
+            border-bottom: 1px solid #333;
+        }
+
+        .tab-button {
+            background: none;
+            border: none;
+            color: #888;
+            padding: 10px 20px;
+            cursor: pointer;
+            margin-right: 10px;
+            position: relative;
+        }
+
+        .tab-button.active {
+            color: #fff;
+        }
+
+        .tab-button.active::after {
+            content: '';
+            position: absolute;
+            bottom: -1px;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: #4169E1;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="task-header">
+            <div>
+                <h1 id="taskName">Task Details</h1>
+                <p id="taskId"></p>
+            </div>
+            <button id="editButton" class="edit-button">Edit Details</button>
+        </div>
+
+        <div id="viewMode" class="view-mode">
+            <div class="detail-card">
+                <!-- Previous view mode content -->
+                <div class="detail-item">
+                    <label>Problem Statement</label>
+                    <div id="viewProblemStatement" class="detail-value"></div>
+                </div>
+
+                <div class="detail-item">
+                    <label>Zone</label>
+                    <div id="viewZone" class="detail-value"></div>
+                </div>
+
+                <div class="detail-item">
+                    <label>Stakeholders</label>
+                    <div id="viewStakeholders" class="detail-value"></div>
+                </div>
+
+                <div class="detail-item">
+                    <label>Frequency of Problem</label>
+                    <div class="progress-bar">
+                        <div id="frequencyBar" class="progress-fill"></div>
+                    </div>
+                    <div id="viewFrequency" class="detail-value" style="text-align: right;"></div>
+                </div>
+
+                <div class="detail-item">
+                    <label>Impact of Solution</label>
+                    <div class="progress-bar">
+                        <div id="impactBar" class="progress-fill"></div>
+                    </div>
+                    <div id="viewImpact" class="detail-value" style="text-align: right;"></div>
+                </div>
+            </div>
+
+            <!-- Tabs for additional content -->
+            <div class="tab-container">
+                <div class="tab-buttons">
+                    <button class="tab-button active" data-tab="attachments">Attachments</button>
+                    <button class="tab-button" data-tab="history">History</button>
+                    <button class="tab-button" data-tab="comments">Comments</button>
+                </div>
+
+                <div id="attachmentsTab" class="tab-content active">
+                    <div class="file-drop-zone" id="fileDropZone">
+                        <p>Drag and drop files here or click to upload</p>
+                        <input type="file" id="fileInput" multiple style="display: none;">
+                    </div>
+                    <ul class="attachment-list" id="attachmentsList"></ul>
+                </div>
+
+                <div id="historyTab" class="tab-content">
+                    <div class="history-section" id="historyList"></div>
+                </div>
+
+                <div id="commentsTab" class="tab-content">
+                    <div class="form-group">
+                        <textarea id="newComment" placeholder="Add a comment..."></textarea>
+                        <button id="addComment" style="margin-top: 10px;">Add Comment</button>
+                    </div>
+                    <div class="comments-section" id="commentsList"></div>
+                </div>
+            </div>
+        </div>
+
+        <div id="editForm" class="task-form">
+            <form id="taskForm">
+                <div class="form-group">
+                    <label for="problemStatement">Problem Statement</label>
+                    <textarea id="problemStatement" name="problemStatement" required></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label for="zone">Zone</label>
+                    <input type="text" id="zone" name="zone" required placeholder="e.g., SAZ, NAZ, EMEA, APAC">
+                </div>
+
+                <div class="form-group">
+                    <label for="stakeholders">Stakeholders</label>
+                    <textarea id="stakeholders" name="stakeholders" required
+                        placeholder="Enter stakeholders (one per line)"></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label for="frequency">Frequency of Problem</label>
+                    <div class="slider-container">
+                        <span class="slider-value" id="frequencyValue">50</span>
+                        <input type="range" id="frequency" name="frequency" class="slider" min="1" max="100" value="50">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="impact">Impact of Solution</label>
+                    <div class="slider-container">
+                        <span class="slider-value" id="impactValue">50</span>
+                        <input type="range" id="impact" name="impact" class="slider" min="1" max="100" value="50">
+                    </div>
+                </div>
+
+                <button type="submit">Save Details</button>
+            </form>
+        </div>
+
+        <div id="successMessage" class="success-message">
+            Details saved successfully!
+        </div>
+    </div>
+
+    <script>
+        // Get task information from URL parameters
+        const urlParams = new URLSearchParams(window.location.search);
+        const taskId = urlParams.get('id');
+        const taskName = urlParams.get('name');
+
+        // Update page title and header
+        document.title = `Task Details - ${taskName}`;
+        document.getElementById('taskName').textContent = taskName;
+        document.getElementById('taskId').textContent = `ID: ${taskId}`;
+
+        // Initialize form elements
+        const form = document.getElementById('taskForm');
+        const frequencySlider = document.getElementById('frequency');
+        const impactSlider = document.getElementById('impact');
+        const frequencyValue = document.getElementById('frequencyValue');
+        const impactValue = document.getElementById('impactValue');
+        const editButton = document.getElementById('editButton');
+        const editForm = document.getElementById('editForm');
+        const viewMode = document.getElementById('viewMode');
+
+        // Tab functionality
+        const tabButtons = document.querySelectorAll('.tab-button');
+        const tabContents = document.querySelectorAll('.tab-content');
+
+        tabButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                const tabId = button.getAttribute('data-tab');
+
+                // Update active states
+                tabButtons.forEach(btn => btn.classList.remove('active'));
+                tabContents.forEach(content => content.classList.remove('active'));
+
+                button.classList.add('active');
+                document.getElementById(`${tabId}Tab`).classList.add('active');
+            });
+        });
+
+        // File upload functionality
+        const fileDropZone = document.getElementById('fileDropZone');
+        const fileInput = document.getElementById('fileInput');
+        const attachmentsList = document.getElementById('attachmentsList');
+
+        fileDropZone.addEventListener('click', () => fileInput.click());
+
+        fileDropZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            fileDropZone.style.borderColor = '#4169E1';
+        });
+
+        fileDropZone.addEventListener('dragleave', () => {
+            fileDropZone.style.borderColor = '#444';
+        });
+
+        fileDropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            fileDropZone.style.borderColor = '#444';
+            handleFiles(e.dataTransfer.files);
+        });
+
+        fileInput.addEventListener('change', (e) => {
+            handleFiles(e.target.files);
+        });
+
+        function handleFiles(files) {
+            const attachments = JSON.parse(localStorage.getItem(`attachments-${taskId}`) || '[]');
+
+            Array.from(files).forEach(file => {
+                const attachment = {
+                    name: file.name,
+                    size: formatFileSize(file.size),
+                    date: new Date().toISOString()
+                };
+                attachments.push(attachment);
+            });
+
+            localStorage.setItem(`attachments-${taskId}`, JSON.stringify(attachments));
+            updateAttachmentsList();
+            addHistoryEntry(`Added ${files.length} file(s)`);
+        }
+
+        function formatFileSize(bytes) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        }
+
+        function updateAttachmentsList() {
+            const attachments = JSON.parse(localStorage.getItem(`attachments-${taskId}`) || '[]');
+            attachmentsList.innerHTML = attachments.map(attachment => `
+            <li class="attachment-item">
+                <span class="attachment-name">${attachment.name}</span>
+                <span class="attachment-size">${attachment.size}</span>
+                <button onclick="removeAttachment('${attachment.name}')" style="padding: 4px 8px;">Remove</button>
+            </li>
+        `).join('');
+        }
+        function removeAttachment(fileName) {
+            const attachments = JSON.parse(localStorage.getItem(`attachments-${taskId}`) || '[]');
+            const updatedAttachments = attachments.filter(a => a.name !== fileName);
+            localStorage.setItem(`attachments-${taskId}`, JSON.stringify(updatedAttachments));
+            updateAttachmentsList();
+            addHistoryEntry(`Removed file: ${fileName}`);
+        }
+
+        // Comments functionality
+        const commentInput = document.getElementById('newComment');
+        const addCommentButton = document.getElementById('addComment');
+        const commentsList = document.getElementById('commentsList');
+
+        addCommentButton.addEventListener('click', () => {
+            const commentText = commentInput.value.trim();
+            if (commentText) {
+                addComment(commentText);
+                commentInput.value = '';
+            }
+        });
+
+        function addComment(text) {
+            const comments = JSON.parse(localStorage.getItem(`comments-${taskId}`) || '[]');
+            const newComment = {
+                text,
+                author: 'Current User', // In a real app, this would come from auth
+                date: new Date().toISOString()
+            };
+            comments.push(newComment);
+            localStorage.setItem(`comments-${taskId}`, JSON.stringify(comments));
+            updateCommentsList();
+            addHistoryEntry('Added a comment');
+        }
+
+        function updateCommentsList() {
+            const comments = JSON.parse(localStorage.getItem(`comments-${taskId}`) || '[]');
+            commentsList.innerHTML = comments.reverse().map(comment => `
+            <div class="comment">
+                <div class="comment-header">
+                    <span class="comment-author">${comment.author}</span>
+                    <span class="comment-date">${new Date(comment.date).toLocaleString()}</span>
+                </div>
+                <div class="comment-content">${comment.text}</div>
+            </div>
+        `).join('');
+        }
+
+        // History functionality
+        function addHistoryEntry(change) {
+            const history = JSON.parse(localStorage.getItem(`history-${taskId}`) || '[]');
+            const entry = {
+                change,
+                date: new Date().toISOString()
+            };
+            history.push(entry);
+            localStorage.setItem(`history-${taskId}`, JSON.stringify(history));
+            updateHistoryList();
+        }
+
+        function updateHistoryList() {
+            const history = JSON.parse(localStorage.getItem(`history-${taskId}`) || '[]');
+            const historyList = document.getElementById('historyList');
+            historyList.innerHTML = history.reverse().map(entry => `
+            <div class="history-item">
+                <div class="history-date">${new Date(entry.date).toLocaleString()}</div>
+                <div class="history-changes">${entry.change}</div>
+            </div>
+        `).join('');
+        }
+
+        function getProgressBarColor(value) {
+            if (value <= 25) return '#28a745'; // Green
+            if (value <= 50) return '#ffc107'; // Yellow
+            if (value <= 75) return '#fd7e14'; // Orange
+            return '#dc3545'; // Red
+        }
+
+        function updateProgressBars(frequency, impact) {
+            const frequencyBar = document.getElementById('frequencyBar');
+            const impactBar = document.getElementById('impactBar');
+
+            frequencyBar.style.width = `${frequency}%`;
+            frequencyBar.style.backgroundColor = getProgressBarColor(frequency);
+
+            impactBar.style.width = `${impact}%`;
+            impactBar.style.backgroundColor = getProgressBarColor(impact);
+        }
+
+        // Update progress bar colors on slider change
+        frequencySlider.addEventListener('input', (e) => {
+            frequencyValue.textContent = e.target.value;
+            frequencyValue.style.left = `${(e.target.value - 1) * 100 / 99}%`;
+            updateProgressBars(e.target.value, impactSlider.value);
+        });
+
+        impactSlider.addEventListener('input', (e) => {
+            impactValue.textContent = e.target.value;
+            impactValue.style.left = `${(e.target.value - 1) * 100 / 99}%`;
+            updateProgressBars(frequencySlider.value, e.target.value);
+        });
+
+        // Modified save form data function
+        form.addEventListener('submit', (e) => {
+            e.preventDefault();
+
+            const formData = {
+                problemStatement: document.getElementById('problemStatement').value,
+                zone: document.getElementById('zone').value,
+                stakeholders: document.getElementById('stakeholders').value,
+                frequency: document.getElementById('frequency').value,
+                impact: document.getElementById('impact').value
+            };
+
+            const previousData = localStorage.getItem(`taskData-${taskId}`);
+            if (previousData) {
+                const changes = compareChanges(JSON.parse(previousData), formData);
+                if (changes.length > 0) {
+                    addHistoryEntry(`Updated: ${changes.join(', ')}`);
+                }
+            } else {
+                addHistoryEntry('Initial task details saved');
+            }
+
+            localStorage.setItem(`taskData-${taskId}`, JSON.stringify(formData));
+
+            // Update view mode
+            updateViewMode(formData);
+
+            // Show success message
+            const successMessage = document.getElementById('successMessage');
+            successMessage.style.display = 'block';
+            setTimeout(() => {
+                successMessage.style.display = 'none';
+                viewMode.style.display = 'block';
+                editForm.style.display = 'none';
+                editButton.style.display = 'block';
+            }, 1500);
+        });
+
+        function compareChanges(oldData, newData) {
+            const changes = [];
+            for (const [key, value] of Object.entries(newData)) {
+                if (oldData[key] !== value) {
+                    changes.push(key.charAt(0).toUpperCase() + key.slice(1));
+                }
+            }
+            return changes;
+        }
+
+        // Update slider values
+        frequencySlider.addEventListener('input', (e) => {
+            frequencyValue.textContent = e.target.value;
+            frequencyValue.style.left = `${(e.target.value - 1) * 100 / 99}%`;
+        });
+
+        impactSlider.addEventListener('input', (e) => {
+            impactValue.textContent = e.target.value;
+            impactValue.style.left = `${(e.target.value - 1) * 100 / 99}%`;
+        });
+
+        // Toggle between edit and view modes
+        editButton.addEventListener('click', () => {
+            editForm.style.display = 'block';
+            viewMode.style.display = 'none';
+            editButton.style.display = 'none';
+        });
+
+        // Update view mode with saved data
+        function updateViewMode(data) {
+            document.getElementById('viewProblemStatement').textContent = data.problemStatement;
+            document.getElementById('viewZone').textContent = data.zone;
+            document.getElementById('viewStakeholders').textContent = data.stakeholders;
+            document.getElementById('viewFrequency').textContent = `${data.frequency}%`;
+            document.getElementById('viewImpact').textContent = `${data.impact}%`;
+
+            // Update progress bars
+            document.getElementById('frequencyBar').style.width = `${data.frequency}%`;
+            document.getElementById('impactBar').style.width = `${data.impact}%`;
+        }
+
+        // Load saved data
+        function loadSavedData() {
+            const savedData = localStorage.getItem(`taskData-${taskId}`);
+            if (savedData) {
+                const data = JSON.parse(savedData);
+
+                // Populate form fields
+                document.getElementById('problemStatement').value = data.problemStatement;
+                document.getElementById('zone').value = data.zone;
+                document.getElementById('stakeholders').value = data.stakeholders;
+                document.getElementById('frequency').value = data.frequency;
+                document.getElementById('impact').value = data.impact;
+
+                // Update slider values
+                frequencyValue.textContent = data.frequency;
+                impactValue.textContent = data.impact;
+                frequencyValue.style.left = `${(data.frequency - 1) * 100 / 99}%`;
+                impactValue.style.left = `${(data.impact - 1) * 100 / 99}%`;
+
+                // Update view mode
+                updateViewMode(data);
+
+                // Show view mode by default
+                viewMode.style.display = 'block';
+                editForm.style.display = 'none';
+                editButton.style.display = 'block';
+            } else {
+                // If no saved data, show edit form
+                viewMode.style.display = 'none';
+                editForm.style.display = 'block';
+                editButton.style.display = 'none';
+            }
+
+            // Update all lists
+            updateAttachmentsList();
+            updateHistoryList();
+            updateCommentsList();
+        }
+
+        // Save form data
+        form.addEventListener('submit', (e) => {
+            e.preventDefault();
+
+            const formData = {
+                problemStatement: document.getElementById('problemStatement').value,
+                zone: document.getElementById('zone').value,
+                stakeholders: document.getElementById('stakeholders').value,
+                frequency: document.getElementById('frequency').value,
+                impact: document.getElementById('impact').value
+            };
+
+            localStorage.setItem(`taskData-${taskId}`, JSON.stringify(formData));
+
+            // Update view mode
+            updateViewMode(formData);
+
+            // Show success message
+            const successMessage = document.getElementById('successMessage');
+            successMessage.style.display = 'block';
+            setTimeout(() => {
+                successMessage.style.display = 'none';
+
+                // Switch to view mode
+                viewMode.style.display = 'block';
+                editForm.style.display = 'none';
+                editButton.style.display = 'block';
+            }, 1500);
+        });
+
+        // Load saved data when page loads
+        loadSavedData();
+    </script>
+</body>
+
+</html>
